@@ -1,0 +1,137 @@
+.title {
+  font-family: var(--display);
+  font-size: 46px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  margin: 40px 0 28px;
+}
+
+.title em {
+  font-style: italic;
+  font-weight: 500;
+  color: var(--rose);
+}
+
+.tabs {
+  display: flex;
+  gap: 26px;
+  border-bottom: 1px solid var(--ink-12);
+}
+
+.tabs button {
+  position: relative;
+  padding: 12px 0 14px;
+  font-family: var(--display);
+  font-size: 21px;
+  font-style: italic;
+  color: var(--ink-40);
+  transition: color 0.25s;
+}
+
+.tabs button sup {
+  font-family: var(--ui);
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.tabs button[aria-selected="true"] {
+  color: var(--wine);
+}
+
+.tabs button[aria-selected="true"]::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--rose);
+}
+
+.loading {
+  display: grid;
+  place-items: center;
+  padding: 80px 0;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 48px 0;
+}
+
+.emptyText {
+  font-family: var(--read);
+  font-style: italic;
+  font-size: 23px;
+  line-height: 1.35;
+  color: var(--ink-60);
+}
+
+.list {
+  list-style: none;
+}
+
+.item {
+  padding: 28px 0 22px;
+  border-bottom: 1px solid var(--ink-12);
+}
+
+.item blockquote {
+  font-family: var(--read);
+  font-size: 25px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-wrap: pretty;
+}
+
+.item blockquote::before {
+  content: "“";
+  font-family: var(--display);
+  color: var(--rose);
+  margin-right: 2px;
+}
+
+.row {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tags {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-40);
+  padding-bottom: 12px;
+}
+
+.acts {
+  display: flex;
+  margin-right: -10px;
+}
+
+.acts button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  color: var(--ink-60);
+  transition: color 0.2s, transform 0.3s var(--ease);
+}
+
+.acts button:active {
+  transform: scale(0.85);
+}
+
+.acts button[data-on] {
+  color: var(--rose);
+}

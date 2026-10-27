@@ -1,0 +1,13 @@
+# Put the production settings in .env next to this file (see .env.example),
+# then: docker compose up -d --build
+services:
+  kotes:
+    build: .
+    image: kotes:latest
+    container_name: kotes
+    restart: unless-stopped
+    env_file: .env
+    # Bound to localhost: expose it through a reverse proxy or Cloudflare Tunnel
+    # that terminates HTTPS. Sign-in cookies are HTTPS-only in production.
+    ports:
+      - "127.0.0.1:3000:3000"

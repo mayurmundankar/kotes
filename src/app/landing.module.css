@@ -1,0 +1,201 @@
+.page {
+  padding: 18px var(--gutter) 40px;
+}
+
+.signin {
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 16px;
+  margin-right: -16px;
+}
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding-top: 13vh;
+}
+
+.hero :global(.display) {
+  margin-top: -4px;
+}
+
+.ctas {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin-top: 8px;
+}
+
+/* ── Card fan ─────────────────────────────────────────────── */
+
+.fan {
+  position: relative;
+  height: 400px;
+  margin: 72px calc(var(--gutter) * -1) 24px;
+}
+
+.card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 252px;
+  min-height: 300px;
+  padding: 30px 26px 26px;
+  border-radius: 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  transform-origin: 50% 90%;
+  animation: float 7s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -2.2s);
+}
+
+.card:nth-child(1) {
+  --r: -11deg;
+  --x: -64%;
+}
+.card:nth-child(2) {
+  --r: 7deg;
+  --x: -36%;
+}
+.card:nth-child(3) {
+  --r: -2deg;
+  --x: -50%;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translate(var(--x), -50%) rotate(var(--r));
+  }
+  50% {
+    transform: translate(var(--x), -54%) rotate(calc(var(--r) * 0.8));
+  }
+}
+
+.card blockquote {
+  font-family: var(--read);
+  font-size: 26px;
+  line-height: 1.18;
+  font-weight: 500;
+  flex: 1;
+}
+
+.card figcaption {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.mark {
+  font-family: var(--display);
+  font-size: 64px;
+  line-height: 0.6;
+  height: 28px;
+}
+
+.rose {
+  background: var(--rose);
+  color: var(--paper);
+  box-shadow: 0 30px 60px -24px rgb(194 31 72 / 0.55);
+}
+
+.wine {
+  background: var(--wine);
+  color: var(--rose-soft);
+}
+
+.wine .mark {
+  color: var(--rose);
+}
+
+.blush {
+  background: var(--blush);
+  color: var(--wine);
+  box-shadow: inset 0 0 0 1px var(--ink-06);
+}
+
+.blush .mark {
+  color: var(--rose);
+}
+
+/* ── How it works ─────────────────────────────────────────── */
+
+.steps {
+  border-top: 1px solid var(--ink-12);
+  scroll-margin-top: 24px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 8px;
+  padding: 26px 0;
+  border-bottom: 1px solid var(--ink-12);
+}
+
+.num {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--rose);
+  padding-top: 8px;
+}
+
+.step h3 {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.step p {
+  font-family: var(--read);
+  font-size: 19px;
+  line-height: 1.4;
+  color: var(--ink-60);
+}
+
+/* ── Closing ──────────────────────────────────────────────── */
+
+.close {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: center;
+  text-align: center;
+  padding: 88px 0 72px;
+}
+
+.close h2 {
+  font-family: var(--display);
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 14px;
+}
+
+.close h2 em {
+  display: block;
+  font-style: italic;
+  font-weight: 500;
+  color: var(--rose);
+}
+
+.foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-top: 24px;
+  border-top: 1px solid var(--ink-12);
+}
+
+.foot :global(.wordmark) {
+  font-size: 20px;
+}

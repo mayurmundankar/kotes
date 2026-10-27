@@ -1,0 +1,132 @@
+.card {
+  position: relative;
+  height: 100dvh;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 88px var(--gutter) calc(var(--nav-h) + var(--safe-b) + 64px);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: background 0.4s;
+}
+
+/* One hue, four depths. */
+.card[data-tone="paper"] { background: var(--paper); color: var(--wine); --accent: var(--rose); --soft: var(--ink-60); }
+.card[data-tone="blush"] { background: var(--blush); color: var(--wine); --accent: var(--rose); --soft: var(--ink-60); }
+.card[data-tone="rose"]  { background: var(--rose); color: var(--paper); --accent: var(--wine); --soft: rgb(255 246 247 / 0.78); }
+.card[data-tone="wine"]  { background: var(--wine); color: var(--paper); --accent: var(--rose); --soft: rgb(246 195 207 / 0.7); }
+
+.inner {
+  padding-right: 36px;
+}
+
+.mark {
+  display: block;
+  font-family: var(--display);
+  font-size: 120px;
+  line-height: 0.7;
+  height: 52px;
+  margin-left: -6px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.text {
+  font-family: var(--read);
+  font-weight: 500;
+  line-height: 1.12;
+  letter-spacing: -0.012em;
+  text-wrap: pretty;
+}
+
+.dash {
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: var(--accent);
+  margin-top: 30px;
+}
+
+.tags {
+  position: absolute;
+  left: var(--gutter);
+  bottom: calc(var(--nav-h) + var(--safe-b) + 26px);
+  display: flex;
+  gap: 14px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--soft);
+}
+
+.tags span:first-child {
+  font-family: var(--display);
+  font-style: italic;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  font-size: 13px;
+  color: var(--accent);
+  margin-top: -2px;
+}
+
+.actions {
+  position: absolute;
+  right: 12px;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.act {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  transition: transform 0.35s var(--ease), color 0.25s;
+}
+
+.act:active {
+  transform: scale(0.82);
+}
+
+.act[data-on] {
+  color: var(--accent);
+  animation: pop 0.45s var(--ease);
+}
+
+@keyframes pop {
+  40% {
+    transform: scale(1.28);
+  }
+}
+
+.burst {
+  position: absolute;
+  color: var(--accent);
+  pointer-events: none;
+  animation: burst 0.9s var(--ease) forwards;
+}
+
+@keyframes burst {
+  0% {
+    transform: translate(-50%, -50%) scale(0.2) rotate(-14deg);
+    opacity: 0;
+  }
+  25% {
+    transform: translate(-50%, -50%) scale(1.15) rotate(-6deg);
+    opacity: 1;
+  }
+  55% {
+    transform: translate(-50%, -50%) scale(0.95) rotate(-6deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -150%) scale(0.9) rotate(-6deg);
+    opacity: 0;
+  }
+}

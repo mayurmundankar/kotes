@@ -1,0 +1,106 @@
+.hello {
+  padding: 44px 0 36px;
+}
+
+.email {
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 30px;
+  letter-spacing: -0.02em;
+  margin-top: 10px;
+  word-break: break-all;
+}
+
+.block {
+  border-top: 1px solid var(--ink-12);
+  padding: 26px 0 30px;
+}
+
+.blockHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.blockHead h2 {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.blockHead :global(.link) {
+  color: var(--rose);
+  font-size: 14px;
+}
+
+.note {
+  font-family: var(--read);
+  font-style: italic;
+  font-size: 17px;
+  color: var(--ink-60);
+  margin: 6px 0 22px;
+}
+
+.bars {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bars li {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.label {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 18px;
+}
+
+.track {
+  height: 3px;
+  background: var(--ink-06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  background: var(--rose);
+  border-radius: 2px;
+  transform-origin: left;
+  animation: grow 1.1s var(--ease) both 0.3s;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.out {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--rose-deep);
+  padding: 4px 0 14px;
+}
+
+.delete {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-40);
+  padding: 0 0 18px;
+  transition: color 0.2s;
+}
+
+.delete[data-armed] {
+  color: var(--rose-deep);
+  font-weight: 600;
+}
