@@ -1,5 +1,7 @@
-.page {
-  padding-bottom: calc(120px + var(--safe-b));
+/* Room for the fixed dock, so the last themes can scroll clear of it.
+   On the list itself: `.page.bare` would override padding on the page. */
+.chips {
+  padding-bottom: calc(140px + var(--safe-b));
 }
 
 .title {

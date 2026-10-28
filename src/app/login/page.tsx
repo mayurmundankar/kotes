@@ -92,7 +92,7 @@ export default function Login() {
             Your <em>email,</em> please.
           </h1>
           <p className={`${s.sub} rise d2`}>
-            No password to remember. We&apos;ll send a {OTP_LENGTH}-digit code — new reader or returning.
+            No password to remember. We&apos;ll send a {OTP_LENGTH}-digit code, whether you&apos;re new or returning.
           </p>
           <input
             className="field rise d3"

@@ -5,7 +5,8 @@ import { backend, type Kind, type Quote } from "@/lib/backend";
 import { useGuard } from "@/components/session";
 import { Nav } from "@/components/nav";
 import { QuoteCard, TONES, type Tone } from "@/components/quote-card";
-import { shareQuote, useToast } from "@/components/toast";
+import { useToast } from "@/components/toast";
+import { ShareSheet } from "@/components/share-sheet";
 import s from "./feed.module.css";
 
 type Item = { key: string; q: Quote };
@@ -20,6 +21,7 @@ export default function Feed() {
   const [active, setActive] = useState(0);
   const [empty, setEmpty] = useState(false);
   const [toast, toastNode] = useToast();
+  const [sharing, setSharing] = useState<{ quote: Quote; tone: Tone } | null>(null);
   const itemsRef = useRef<Item[]>([]);
   const loading = useRef(false);
   const seq = useRef(0);
@@ -85,7 +87,7 @@ export default function Feed() {
           quote={q}
           tone={TONES[i % TONES.length]}
           onReact={onReact}
-          onShare={(x) => shareQuote(x.text, toast)}
+          onShare={(x) => setSharing({ quote: x, tone: TONES[i % TONES.length] })}
           onEnter={() => {
             setActive(i);
             if (i >= itemsRef.current.length - PREFETCH) load();
@@ -112,6 +114,13 @@ export default function Feed() {
       {items.length > 0 && active === 0 && <p className={s.swipe}>Swipe up · double-tap to like</p>}
 
       <Nav tone={tone} />
+      <ShareSheet
+        key={sharing?.quote.id}
+        quote={sharing?.quote ?? null}
+        tone={sharing?.tone}
+        onClose={() => setSharing(null)}
+        toast={toast}
+      />
       {toastNode}
     </main>
   );

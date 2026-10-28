@@ -4,7 +4,7 @@ import { Back } from "@/components/icons";
 import s from "./privacy.module.css";
 
 export const metadata: Metadata = {
-  title: "Privacy — kotes",
+  title: "Privacy · kotes",
   description: "What kotes collects, why, and how to delete it.",
 };
 

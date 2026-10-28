@@ -83,7 +83,15 @@ Each reader has a weight for every theme (`love`, `stoic`, …) and for every au
 | First view: 1.5–5s | +0.25 |
 | First view: over 5s | +1 (lingered) |
 
-`kotes.get_feed()` puts unseen quotes first. Among those, it runs a **weighted random race**: each quote's chance grows exponentially with how well it matches the reader's taste. The feed leans towards what you like but keeps exploring. Once every quote has been seen, it recycles them the same way.
+**Your themes** (`kotes.fav_themes()`) are the ones you picked, plus any theme you've liked or kept 2+ quotes from. Only explicit choices count, so lingering can't quietly add themes. Readers who signed up before picks were recorded use their 3 strongest themes until they retune. The You page shows exactly this set.
+
+`kotes.get_feed()` fills about 85% of each batch (7 of 8) from your themes and keeps the rest for exploring. Within each group, unseen quotes come first, then a **weighted random race**: each quote's chance grows exponentially with how well it matches your taste. When a group runs short, the other fills in, and once everything has been seen, it recycles.
+
+## Sharing
+
+Share opens a preview of a 1080×1920 story image, drawn on a canvas in the browser with the app's fonts and the card's colour (switchable). On phones, **Share to stories & chats** passes the image file to the system share sheet, which lists Instagram, Facebook, WhatsApp and so on. Elsewhere it's saved as a PNG. The header and footer stay out of the top and bottom 250 px, which Instagram and WhatsApp cover with their own controls.
+
+Links to the site preview with [`public/og.png`](public/og.png), a 1200×630 card in the hero's style. To change it, edit [`scripts/og/og.html`](scripts/og/og.html) and run `npm run og` (needs `npm i -D playwright` and `npx playwright install chromium`). `SITE_URL` (default `https://kotes.mayurmundankar.com`) sets the absolute URL used in previews, and is read at build time.
 
 ## Fonts
 
@@ -113,5 +121,6 @@ src/app/api/        auth (code, verify, signout), me, feed, reactions, views, li
 src/server/         db pool, auth, rate limits, Resend email, data access (server-only)
 src/fonts/          static WOFF2 fonts (built by scripts/build-fonts.py)
 src/lib/backend.ts  the browser's typed client for /api
-supabase/           schema.sql, seed.sql (generated), cleanup-supabase-auth.sql (one-off)
+supabase/           schema.sql, seed.sql (generated), no-em-dashes.sql, cleanup-supabase-auth.sql (one-off)
+scripts/og/         source and renderer for public/og.png
 ```

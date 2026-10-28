@@ -1,0 +1,34 @@
+<!doctype html>
+<!-- Source of public/og.png, the link preview (1200×630). Rebuild: npm run og -->
+<meta charset="utf-8">
+<style>
+@font-face { font-family: d; src: url(../../src/fonts/dmserif/dmserif-400.woff2); }
+@font-face { font-family: d; font-style: italic; src: url(../../src/fonts/dmserif/dmserif-400-italic.woff2); }
+@font-face { font-family: g; font-weight: 400; src: url(../../src/fonts/garamond/garamond-400.woff2); }
+@font-face { font-family: g; font-weight: 500; src: url(../../src/fonts/garamond/garamond-500.woff2); }
+@font-face { font-family: m; font-weight: 600; src: url(../../src/fonts/manrope/manrope-600.woff2); }
+* { margin: 0; box-sizing: border-box; }
+body { width: 1200px; height: 630px; overflow: hidden; background: #fff6f7; color: #2a0711; position: relative; }
+.copy { position: absolute; left: 80px; top: 64px; width: 600px; }
+.wm { font: italic 40px d; } .wm i { color: #e8365f; font-style: normal; }
+.eyebrow { font: 600 15px m; letter-spacing: .22em; text-transform: uppercase; color: rgba(42,7,17,.55); margin-top: 64px; }
+h1 { font: 400 84px/0.98 d; letter-spacing: -.02em; margin-top: 18px; }
+h1 em { color: #e8365f; }
+p { font: 400 27px/1.4 g; color: rgba(42,7,17,.62); margin-top: 24px; width: 520px; }
+.card { position: absolute; width: 300px; height: 380px; border-radius: 30px; padding: 34px 30px; display: flex; flex-direction: column; justify-content: space-between; }
+.card .m { font: 400 110px/0.6 d; height: 46px; }
+.card q { quotes: none; font: 500 32px/1.16 g; flex: 1; margin-top: 18px; }
+.card span { font: 600 13px m; letter-spacing: .2em; text-transform: uppercase; opacity: .72; }
+.wine { left: 700px; top: 150px; transform: rotate(-11deg); background: #2a0711; color: #f6c3cf; } .wine .m { color: #e8365f; }
+.blush { left: 860px; top: 110px; transform: rotate(8deg); background: #fdecf0; box-shadow: inset 0 0 0 1px rgba(42,7,17,.06); } .blush .m { color: #e8365f; }
+.rose { left: 770px; top: 175px; transform: rotate(-2deg); background: #e8365f; color: #fff6f7; box-shadow: 0 34px 70px -28px rgba(194,31,72,.6); }
+</style>
+<div class="copy">
+  <div class="wm">kotes<i>.</i></div>
+  <div class="eyebrow">A reading app · for humans</div>
+  <h1>The feed that<br><em>reads you</em> back.</h1>
+  <p>Endless quotes from the minds worth keeping, tuned to what moves you.</p>
+</div>
+<div class="card wine"><div class="m">“</div><q>I dwell in Possibility.</q><span>Hope</span></div>
+<div class="card blush"><div class="m">“</div><q>Forever is composed of nows.</q><span>Time</span></div>
+<div class="card rose"><div class="m">“</div><q>We are all in the gutter, but some of us are looking at the stars.</q><span>Wit</span></div>

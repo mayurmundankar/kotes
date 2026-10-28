@@ -61,8 +61,12 @@ export async function getLibrary(reader: string, k: unknown) {
 }
 
 export async function getTaste(reader: string): Promise<Taste[]> {
+  // Themes only: author affinities stay behind the scenes, like the authors.
   return query<Taste>(
-    "select feature, weight from kotes.tastes where reader_id = $1 order by weight desc",
+    `select t.feature, t.weight, t.picked, t.feature in (select kotes.fav_themes($1)) as fav
+     from kotes.tastes t
+     where t.reader_id = $1 and t.feature not like 'by:%'
+     order by t.weight desc`,
     [reader],
   );
 }

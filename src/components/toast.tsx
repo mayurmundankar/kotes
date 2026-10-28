@@ -21,18 +21,3 @@ export function useToast() {
   );
   return [toast, node] as const;
 }
-
-export async function shareQuote(text: string, toast: (m: string) => void) {
-  const body = `“${text}”`;
-  const url = typeof location !== "undefined" ? location.origin : "";
-  try {
-    if (navigator.share) {
-      await navigator.share({ text: `${body}\n\nfound on kotes`, url });
-      return;
-    }
-    await navigator.clipboard.writeText(`${body}\n${url}`);
-    toast("Copied to clipboard");
-  } catch {
-    // Share sheet dismissed.
-  }
-}

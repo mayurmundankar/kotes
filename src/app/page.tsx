@@ -12,7 +12,7 @@ const FAN = [
 ];
 
 const STEPS = [
-  { n: "01", title: "Read.", body: "An endless river of lines — poets, stoics, wits and the quietly heartbroken." },
+  { n: "01", title: "Read.", body: "An endless river of lines from poets, stoics, wits and the quietly heartbroken." },
   { n: "02", title: "Linger.", body: "What you like, keep and linger on teaches kotes your taste. Nothing else does." },
   { n: "03", title: "Keep.", body: "Save the ones that stay with you. A private shelf of words, always within reach." },
 ];
@@ -37,7 +37,7 @@ export default function Landing() {
           The feed that <em>reads you</em> back.
         </h1>
         <p className="lede rise d3">
-          Endless quotes from the minds worth keeping — quietly tuned, line by line, to what moves you.
+          Endless quotes from the minds worth keeping, quietly tuned, line by line, to what moves you.
         </p>
         <div className={`${s.ctas} rise d4`}>
           <Link href="/login" className="btn">
@@ -47,7 +47,7 @@ export default function Landing() {
             How it works <Arrow />
           </a>
         </div>
-        <p className="fine rise d4">Free. Passwordless. No posts, no noise — only reading.</p>
+        <p className="fine rise d4">Free. Passwordless. No posts, no noise. Only reading.</p>
       </section>
 
       <section className={s.fan} aria-hidden>

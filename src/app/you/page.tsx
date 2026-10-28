@@ -24,7 +24,7 @@ export default function You() {
 
   if (!ready) return <div className="center"><span className="spinner" /></div>;
 
-  const themes = (taste ?? []).filter((t) => !t.feature.startsWith("by:") && t.weight > 0).slice(0, 6);
+  const themes = (taste ?? []).filter((t) => t.fav);
   const max = Math.max(1, ...themes.map((t) => t.weight));
 
   async function signOut() {
@@ -70,13 +70,13 @@ export default function You() {
             Retune <Arrow />
           </Link>
         </div>
-        <p className={s.note}>Learned from what you like, keep and linger on.</p>
+        <p className={s.note}>The themes you picked, plus any you keep liking. The bars show how strongly each one pulls.</p>
         <ul className={s.bars}>
           {themes.map((t) => (
             <li key={t.feature}>
               <span className={s.label}>{themeLabel(t.feature)}</span>
               <span className={s.track}>
-                <span className={s.fill} style={{ width: `${(t.weight / max) * 100}%` }} />
+                <span className={s.fill} style={{ width: `${Math.max(8, (t.weight / max) * 100)}%` }} />
               </span>
             </li>
           ))}

@@ -65,6 +65,8 @@ create table if not exists kotes.tastes (
   updated_at timestamptz not null default now(),
   primary key (reader_id, feature)
 );
+-- Themes the reader chose at onboarding or retune (weights alone drift with reading).
+alter table kotes.tastes add column if not exists picked boolean not null default false;
 
 create table if not exists kotes.reactions (
   reader_id  uuid not null references kotes.readers (id) on delete cascade,
@@ -169,20 +171,51 @@ set search_path = ''
 as $$
 begin
   update kotes.tastes
-  set weight = least(weight, 0), updated_at = now()
+  set weight = least(weight, 0), picked = false, updated_at = now()
   where reader_id = p_reader and feature not like 'by:%' and not (feature = any (p_tags));
 
-  insert into kotes.tastes (reader_id, feature, weight)
-  select p_reader, t, 4 from unnest(p_tags) t
+  insert into kotes.tastes (reader_id, feature, weight, picked)
+  select p_reader, t, 4, true from unnest(p_tags) t
   on conflict (reader_id, feature)
-  do update set weight = greatest(kotes.tastes.weight, 4), updated_at = now();
+  do update set weight = greatest(kotes.tastes.weight, 4), picked = true, updated_at = now();
 end;
 $$;
 
--- The feed. Unseen quotes first; within that, a weighted-random race where each
--- quote's chance grows exponentially with how well it matches the reader's taste.
--- Randomness keeps it exploring; the taste keeps it personal. When everything has
--- been seen, it recycles the same way.
+-- A reader's themes: the ones they picked, plus any theme they've liked or kept
+-- two or more quotes from. Only explicit choices count; lingering doesn't.
+-- Readers who onboarded before picks were recorded fall back to their three
+-- strongest themes until they retune.
+create or replace function kotes.fav_themes(p_reader uuid)
+returns setof text
+language sql
+stable
+set search_path = ''
+as $$
+  with picks as (
+    select feature from kotes.tastes where reader_id = p_reader and picked
+  )
+  select feature from picks
+  union
+  (select feature from kotes.tastes
+   where reader_id = p_reader and feature not like 'by:%' and weight > 0
+     and not exists (select 1 from picks)
+   order by weight desc limit 3)
+  union
+  select tag
+  from kotes.reactions r
+  join kotes.quotes q on q.id = r.quote_id
+  cross join lateral unnest(q.tags) as tag
+  where r.reader_id = p_reader
+  group by tag
+  having count(distinct r.quote_id) >= 2;
+$$;
+
+-- The feed. Your themes come from kotes.fav_themes().
+-- About 85% of each batch comes from your themes and the rest explores, so
+-- the feed stays yours without going stale. Within each group, unseen quotes
+-- come first, then a weighted-random race where a quote's chance grows
+-- exponentially with how well it matches your taste. When a group runs short,
+-- the other fills in; when everything has been seen, it recycles.
 create or replace function kotes.get_feed(p_reader uuid, p_limit int default 8, p_exclude bigint[] default '{}')
 returns table (id bigint, body text, author text, source text, tags text[], liked boolean, saved boolean)
 language sql
@@ -192,6 +225,13 @@ as $$
   with t as (
     select feature, weight from kotes.tastes where reader_id = p_reader
   ),
+  favs as (
+    select f as feature from kotes.fav_themes(p_reader) f
+  ),
+  quota as (
+    select n, case when n >= 4 then greatest(1, round(n * 0.15))::int else 0 end as explore
+    from (select least(greatest(p_limit, 1), 30) as n) l
+  ),
   scale as (
     select greatest(4, coalesce(max(abs(weight)), 0) / 3) as tau from t
   ),
@@ -199,19 +239,32 @@ as $$
     select q.id, q.body, q.author, q.source, q.tags,
       coalesce((select sum(t.weight) from t where t.feature = any (q.tags)), 0)
         + coalesce((select t.weight from t where t.feature = 'by:' || q.author), 0) as score,
-      v.seen_at
+      exists (select 1 from favs where favs.feature = any (q.tags)) as fav,
+      v.seen_at is not null as seen
     from kotes.quotes q
     left join kotes.views v on v.quote_id = q.id and v.reader_id = p_reader
     where not (q.id = any (coalesce(p_exclude, '{}')))
+  ),
+  ranked as (
+    select s.*, row_number() over (
+      partition by s.fav
+      order by s.seen, -ln(1 - random()) / exp(greatest(least(s.score / scale.tau, 6), -6))
+    ) as rn
+    from scored s, scale
+  ),
+  slotted as (
+    select r.*,
+      case when (r.fav and r.rn <= quota.n - quota.explore) or (not r.fav and r.rn <= quota.explore)
+        then 0 else 1 end as tier
+    from ranked r, quota
   )
-  select s.id, s.body, s.author, s.source, s.tags,
-    exists (select 1 from kotes.reactions r where r.reader_id = p_reader and r.quote_id = s.id and r.kind = 'like'),
-    exists (select 1 from kotes.reactions r where r.reader_id = p_reader and r.quote_id = s.id and r.kind = 'save')
-  from scored s, scale
-  order by
-    (s.seen_at is not null),
-    -ln(1 - random()) / exp(greatest(least(s.score / scale.tau, 6), -6))
-  limit least(greatest(p_limit, 1), 30);
+  select p.id, p.body, p.author, p.source, p.tags,
+    exists (select 1 from kotes.reactions r where r.reader_id = p_reader and r.quote_id = p.id and r.kind = 'like'),
+    exists (select 1 from kotes.reactions r where r.reader_id = p_reader and r.quote_id = p.id and r.kind = 'save')
+  from slotted p
+  -- Quota first, shuffled so the explorer isn't always last; then fill-ins.
+  order by p.tier, case when p.tier = 0 then random() end, not p.fav, p.seen, p.rn
+  limit (select n from quota);
 $$;
 
 -- Kept or liked quotes, newest first.

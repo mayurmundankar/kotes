@@ -13,7 +13,8 @@ export type Quote = {
 
 export type User = { id: string; email: string };
 export type Session = { user: User | null; onboarded: boolean };
-export type Taste = { feature: string; weight: number };
+// `fav`: one of the reader's themes (picked, or liked/kept twice); the feed leans on these.
+export type Taste = { feature: string; weight: number; picked: boolean; fav: boolean };
 export type Kind = "like" | "save";
 
 export const OTP_LENGTH = 6;

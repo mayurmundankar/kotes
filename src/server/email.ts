@@ -38,7 +38,7 @@ const html = (code: string) => `<!doctype html>
       ${code}
     </td></tr>
     <tr><td style="padding:22px 36px 0;font-family:Helvetica,Arial,sans-serif;font-size:13px;line-height:1.6;color:rgba(42,7,17,0.6);">
-      It expires in 10 minutes. If you didn&rsquo;t ask for it, ignore this email &mdash; nothing happens without the code.
+      It expires in 10 minutes. If you didn&rsquo;t ask for it, ignore this email. Nothing happens without the code.
     </td></tr>
     <tr><td style="padding:40px 36px 40px;">
       <div style="height:1px;background:rgba(42,7,17,0.12);"></div>

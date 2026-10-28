@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed:sql": "node scripts/gen-seed.mjs",
-    "db:apply": "node scripts/db-apply.mjs"
+    "db:apply": "node scripts/db-apply.mjs",
+    "og": "node scripts/og/render.mjs"
   },
   "dependencies": {
     "next": "16.4.3",

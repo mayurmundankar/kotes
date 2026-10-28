@@ -19,9 +19,11 @@ export default function Onboarding() {
   // Retuning: start from the themes the reader already leans towards.
   useEffect(() => {
     if (!ready || !onboarded) return;
-    backend.getTaste().then((t) =>
-      setPicked(t.filter((x) => !x.feature.startsWith("by:") && x.weight > 0).map((x) => x.feature)),
-    );
+    backend.getTaste().then((t) => {
+      // Readers from before picks were recorded start from their current themes.
+      const picks = t.some((x) => x.picked) ? t.filter((x) => x.picked) : t.filter((x) => x.fav);
+      setPicked(picks.map((x) => x.feature));
+    });
   }, [ready, onboarded]);
 
   const toggle = (id: string) =>
@@ -50,7 +52,7 @@ export default function Onboarding() {
         What <em>moves</em> you?
       </h1>
       <p className={`${s.sub} rise d2`}>
-        Pick at least three. It&apos;s only a first guess — kotes keeps learning from every line you keep.
+        Pick at least three. It&apos;s only a first guess. kotes keeps learning from every line you keep.
       </p>
 
       <div className={`${s.chips} rise d3`}>

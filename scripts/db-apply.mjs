@@ -16,7 +16,8 @@ if (!url) {
   process.exit(1);
 }
 
-const files = ["schema.sql", "seed.sql"];
+// Data fixes run before the seed, so renamed quotes are updated rather than duplicated.
+const files = ["schema.sql", "no-em-dashes.sql", "seed.sql"];
 if (process.argv.includes("--cleanup")) files.unshift("cleanup-supabase-auth.sql");
 
 const db = new pg.Client({ connectionString: url, ssl: { ca: SUPABASE_CA } });

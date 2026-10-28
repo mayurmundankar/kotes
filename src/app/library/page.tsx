@@ -7,7 +7,8 @@ import { themeLabel } from "@/lib/themes";
 import { useGuard } from "@/components/session";
 import { Nav } from "@/components/nav";
 import { Bookmark, Heart, Share } from "@/components/icons";
-import { shareQuote, useToast } from "@/components/toast";
+import { useToast } from "@/components/toast";
+import { ShareSheet } from "@/components/share-sheet";
 import s from "./library.module.css";
 
 export default function Library() {
@@ -15,6 +16,7 @@ export default function Library() {
   const [tab, setTab] = useState<Kind>("save");
   const [lists, setLists] = useState<Record<Kind, Quote[] | null>>({ save: null, like: null });
   const [toast, toastNode] = useToast();
+  const [sharing, setSharing] = useState<Quote | null>(null);
 
   useEffect(() => {
     if (!ready) return;
@@ -96,7 +98,7 @@ export default function Library() {
                   <button data-on={q.saved || undefined} onClick={() => toggle(q, "save")} aria-label="Keep">
                     <Bookmark size={21} filled={q.saved} />
                   </button>
-                  <button onClick={() => shareQuote(q.text, toast)} aria-label="Share">
+                  <button onClick={() => setSharing(q)} aria-label="Share">
                     <Share size={21} />
                   </button>
                 </div>
@@ -107,6 +109,7 @@ export default function Library() {
       )}
 
       <Nav />
+      <ShareSheet key={sharing?.id} quote={sharing} onClose={() => setSharing(null)} toast={toast} />
       {toastNode}
     </main>
   );
