@@ -90,7 +90,7 @@ export default function Feed() {
             setActive(i);
             if (i >= itemsRef.current.length - PREFETCH) load();
           }}
-          onLeave={(ms) => backend.recordView(q.id, ms).catch(() => {})}
+          onLeave={(ms) => backend.recordView(q.id, ms)}
         />
       ))}
 

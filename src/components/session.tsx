@@ -1,62 +1,75 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
-import { backend, type User } from "@/lib/backend";
+import { backend, type Session as ServerSession, type User } from "@/lib/backend";
 
 type Status = "loading" | "out" | "in";
-type Session = {
-  status: Status;
-  user: User | null;
-  onboarded: boolean;
-  refresh: () => Promise<void>;
-};
+type Snapshot = { status: Status; user: User | null; onboarded: boolean };
 
-const SessionContext = createContext<Session | null>(null);
+// The session is remembered on the device so a returning reader's pages render
+// at once; /api/me re-checks it in the background and wins if they differ.
+const KEY = "kotes.session";
+const LOADING: Snapshot = { status: "loading", user: null, onboarded: false };
+const OUT: Snapshot = { status: "out", user: null, onboarded: false };
 
-export function SessionProvider({ children }: { children: React.ReactNode }) {
-  const [status, setStatus] = useState<Status>("loading");
-  const [user, setUser] = useState<User | null>(null);
-  const [onboarded, setOnboarded] = useState(false);
-  const current = useRef<string | null | undefined>(undefined);
+let snapshot = LOADING;
+let started = false;
+const subscribers = new Set<() => void>();
 
-  const resolve = useCallback(async (u: User | null, force = false) => {
-    if (!force && current.current === (u?.id ?? null)) return;
-    current.current = u?.id ?? null;
-    setUser(u);
-    if (!u) {
-      setStatus("out");
-      return;
-    }
-    setStatus("loading");
-    try {
-      const taste = await backend.getTaste();
-      setOnboarded(taste.length > 0);
-    } catch {
-      setOnboarded(false);
-    }
-    setStatus("in");
-  }, []);
-
-  useEffect(() => {
-    backend
-      .getUser()
-      .then((u) => resolve(u))
-      .catch(() => resolve(null));
-    return backend.onAuthChange((u) => resolve(u));
-  }, [resolve]);
-
-  const refresh = useCallback(() => resolve(user, true), [resolve, user]);
-
-  return (
-    <SessionContext.Provider value={{ status, user, onboarded, refresh }}>{children}</SessionContext.Provider>
-  );
+function publish(next: Snapshot) {
+  snapshot = next;
+  try {
+    if (next.status === "in") localStorage.setItem(KEY, JSON.stringify({ user: next.user, onboarded: next.onboarded }));
+    else localStorage.removeItem(KEY);
+  } catch {}
+  subscribers.forEach((cb) => cb());
 }
 
+const fromServer = (s: ServerSession | null): Snapshot =>
+  s?.user ? { status: "in", user: s.user, onboarded: s.onboarded } : OUT;
+
+async function revalidate() {
+  try {
+    publish(fromServer(await backend.getSession()));
+  } catch {
+    // Offline or server hiccup: keep a remembered session; otherwise treat as signed out.
+    if (snapshot.status === "loading") publish(OUT);
+  }
+}
+
+function start() {
+  if (started) return;
+  started = true;
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY) ?? "null");
+    if (saved?.user) snapshot = { status: "in", user: saved.user, onboarded: !!saved.onboarded };
+  } catch {}
+  backend.onAuthChange((s) => publish(fromServer(s)));
+  revalidate();
+}
+
+function subscribe(cb: () => void) {
+  start();
+  subscribers.add(cb);
+  return () => {
+    subscribers.delete(cb);
+  };
+}
+
+const getSnapshot = () => {
+  start();
+  return snapshot;
+};
+const getServerSnapshot = () => LOADING;
+
 export function useSession() {
-  const ctx = useContext(SessionContext);
-  if (!ctx) throw new Error("useSession outside SessionProvider");
-  return ctx;
+  const s = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  return {
+    ...s,
+    refresh: revalidate,
+    markOnboarded: () => publish({ ...snapshot, onboarded: true }),
+  };
 }
 
 /**

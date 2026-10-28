@@ -114,6 +114,9 @@ export default function Login() {
             <p className={s.promise}>
               We don&apos;t have bandwidth to send you promotional emails<span>…</span>
             </p>
+            <Link href="/privacy" className="fine">
+              How we handle your data
+            </Link>
           </div>
         </form>
       ) : (

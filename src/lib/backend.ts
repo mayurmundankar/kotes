@@ -12,6 +12,7 @@ export type Quote = {
 };
 
 export type User = { id: string; email: string };
+export type Session = { user: User | null; onboarded: boolean };
 export type Taste = { feature: string; weight: number };
 export type Kind = "like" | "save";
 
@@ -27,8 +28,8 @@ export class ApiError extends Error {
   }
 }
 
-const listeners = new Set<(u: User | null) => void>();
-const emit = (u: User | null) => listeners.forEach((cb) => cb(u));
+const listeners = new Set<(s: Session | null) => void>();
+const emit = (s: Session | null) => listeners.forEach((cb) => cb(s));
 
 async function api<T>(path: string, init?: { method?: string; body?: unknown; keepalive?: boolean }): Promise<T> {
   const res = await fetch(`/api/${path}`, {
@@ -48,13 +49,34 @@ async function api<T>(path: string, init?: { method?: string; body?: unknown; ke
   return data as T;
 }
 
+// Views are sent in batches: every few seconds, or when the page is hidden.
+const VIEW_BATCH = 8;
+const VIEW_FLUSH_MS = 5000;
+let views: { quoteId: number; dwellMs: number }[] = [];
+let viewTimer: ReturnType<typeof setTimeout> | undefined;
+
+function flushViews() {
+  clearTimeout(viewTimer);
+  viewTimer = undefined;
+  if (!views.length) return;
+  const batch = views;
+  views = [];
+  // keepalive lets the request finish even if the page is closing.
+  api("views", { body: { views: batch }, keepalive: true }).catch(() => {});
+}
+
+if (typeof window !== "undefined") {
+  addEventListener("pagehide", flushViews);
+  document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && flushViews());
+}
+
 export const backend = {
   async sendCode(email: string) {
     await api("auth/code", { body: { email } });
   },
   async verifyCode(email: string, code: string) {
-    const { reader } = await api<{ reader: User }>("auth/verify", { body: { email, code } });
-    emit(reader);
+    const { reader, onboarded } = await api<{ reader: User; onboarded: boolean }>("auth/verify", { body: { email, code } });
+    emit({ user: reader, onboarded });
     return reader;
   },
   async signOut() {
@@ -65,10 +87,11 @@ export const backend = {
     await api("me", { method: "DELETE", body: {} });
     emit(null);
   },
-  async getUser() {
-    return (await api<{ reader: User | null }>("me")).reader;
+  async getSession(): Promise<Session> {
+    const { reader, onboarded } = await api<{ reader: User | null; onboarded: boolean }>("me");
+    return { user: reader, onboarded };
   },
-  onAuthChange(cb: (u: User | null) => void) {
+  onAuthChange(cb: (s: Session | null) => void) {
     listeners.add(cb);
     return () => {
       listeners.delete(cb);
@@ -81,9 +104,10 @@ export const backend = {
   async react(quoteId: number, kind: Kind, on: boolean) {
     await api("reactions", { body: { quoteId, kind, on } });
   },
-  async recordView(quoteId: number, dwellMs: number) {
-    // keepalive lets the request finish even if the page is closing.
-    await api("views", { body: { quoteId, dwellMs: Math.round(dwellMs) }, keepalive: true });
+  recordView(quoteId: number, dwellMs: number) {
+    views.push({ quoteId, dwellMs: Math.round(dwellMs) });
+    if (views.length >= VIEW_BATCH) flushViews();
+    else viewTimer ??= setTimeout(flushViews, VIEW_FLUSH_MS);
   },
   async getLibrary(kind: Kind) {
     return (await api<{ quotes: Quote[] }>(`library?kind=${kind}`)).quotes;

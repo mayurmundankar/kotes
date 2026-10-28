@@ -20,7 +20,7 @@ export async function sendCodeEmail(to: string, code: string) {
   return ((await res.json()) as { id: string }).id;
 }
 
-const display = `'Bodoni 72',Didot,'Bodoni MT',Georgia,serif`;
+const display = `'DM Serif Display',Didot,Georgia,serif`;
 const serif = `Georgia,'Times New Roman',serif`;
 
 const html = (code: string) => `<!doctype html>

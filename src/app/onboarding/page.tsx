@@ -11,7 +11,7 @@ const MIN = 3;
 
 export default function Onboarding() {
   const ready = useGuard("member");
-  const { onboarded, refresh } = useSession();
+  const { onboarded, markOnboarded } = useSession();
   const router = useRouter();
   const [picked, setPicked] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
@@ -30,7 +30,7 @@ export default function Onboarding() {
   async function done() {
     setBusy(true);
     await backend.setTastes(picked);
-    await refresh();
+    markOnboarded();
     router.replace("/feed");
   }
 

@@ -131,27 +131,52 @@ async function setCookie(token: string) {
   });
 }
 
+// Verified sessions, remembered briefly so most API calls skip a database round
+// trip. Single server, so in-memory is enough; sign-out and deletion evict.
+const SESSION_CACHE_MS = 60_000;
+const sessionCache = new Map<string, { reader: Reader; until: number }>();
+
 /** The signed-in reader, or null. Sessions slide forward once a day. */
 export async function getReader(): Promise<Reader | null> {
   const token = (await cookies()).get(COOKIE)?.value;
   if (!token) return null;
+  const hash = hashToken(token);
+  const hit = sessionCache.get(hash);
+  if (hit && hit.until > Date.now()) return hit.reader;
+
   const [row] = await query<Reader & { stale: boolean }>(
     `select r.id, r.email, s.last_used_at < now() - interval '1 day' as stale
      from kotes.sessions s join kotes.readers r on r.id = s.reader_id
      where s.token_hash = $1 and s.expires_at > now()`,
-    [hashToken(token)],
+    [hash],
   );
-  if (!row) return null;
+  if (!row) {
+    sessionCache.delete(hash);
+    return null;
+  }
   if (row.stale) {
     await query(
-      `update kotes.sessions set last_used_at = now(), expires_at = now() + make_interval(days => $2)
-       where token_hash = $1`,
-      [hashToken(token), SESSION_DAYS],
+      `with s as (
+         update kotes.sessions set last_used_at = now(), expires_at = now() + make_interval(days => $2)
+         where token_hash = $1 returning reader_id
+       )
+       update kotes.readers set last_seen_at = now() where id in (select reader_id from s)`,
+      [hash, SESSION_DAYS],
     );
-    await query("update kotes.readers set last_seen_at = now() where id = $1", [row.id]);
     await setCookie(token);
   }
-  return { id: row.id, email: row.email };
+  const reader = { id: row.id, email: row.email };
+  if (sessionCache.size > 5_000) sessionCache.clear();
+  sessionCache.set(hash, { reader, until: Date.now() + SESSION_CACHE_MS });
+  return reader;
+}
+
+export async function isOnboarded(readerId: string) {
+  const [row] = await query<{ ok: boolean }>(
+    "select exists (select 1 from kotes.tastes where reader_id = $1) as ok",
+    [readerId],
+  );
+  return row.ok;
 }
 
 export async function requireReader() {
@@ -163,7 +188,10 @@ export async function requireReader() {
 export async function signOut() {
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
-  if (token) await query("delete from kotes.sessions where token_hash = $1", [hashToken(token)]);
+  if (token) {
+    sessionCache.delete(hashToken(token));
+    await query("delete from kotes.sessions where token_hash = $1", [hashToken(token)]);
+  }
   jar.delete(COOKIE);
 }
 
@@ -171,5 +199,6 @@ export async function signOut() {
 export async function deleteReader(id: string) {
   const [row] = await query<{ email: string }>("delete from kotes.readers where id = $1 returning email", [id]);
   if (row) await query("delete from kotes.login_codes where email = $1", [row.email]);
+  for (const [k, v] of sessionCache) if (v.reader.id === id) sessionCache.delete(k);
   (await cookies()).delete(COOKIE);
 }

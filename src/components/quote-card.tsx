@@ -11,11 +11,11 @@ export type Tone = (typeof TONES)[number];
 
 const sizeFor = (text: string) => {
   const n = text.length;
-  if (n < 50) return 46;
-  if (n < 90) return 38;
-  if (n < 140) return 33;
-  if (n < 200) return 29;
-  return 26;
+  if (n < 50) return 40;
+  if (n < 90) return 34;
+  if (n < 140) return 30;
+  if (n < 200) return 27;
+  return 24;
 };
 const MIN_SIZE = 18;
 
@@ -48,6 +48,12 @@ export function QuoteCard({ quote, tone, onReact, onShare, onEnter, onLeave }: P
       const room = card.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
       let size = sizeFor(quote.text);
       text.style.fontSize = `${size}px`;
+      // Text area scales with size², so jump close in one step, then nudge.
+      const over = inner.offsetHeight / room;
+      if (over > 1) {
+        size = Math.max(MIN_SIZE, Math.floor(size / Math.sqrt(over)));
+        text.style.fontSize = `${size}px`;
+      }
       while (inner.offsetHeight > room && size > MIN_SIZE) {
         size -= 1;
         text.style.fontSize = `${size}px`;

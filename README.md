@@ -4,7 +4,7 @@ The feed that reads you back. An endless, mobile-only quote feed for readers. Yo
 
 - **Stack:** Next.js 16 (App Router) · Postgres on Supabase · Resend
 - **Auth:** kotes' own passwordless email codes. Supabase Auth is not used.
-- **Fonts:** Bodoni Moda (display), Cormorant Garamond (quotes), Manrope (interface), self-hosted as static files (see [Fonts](#fonts))
+- **Fonts:** DM Serif Display (display), EB Garamond (quotes), Manrope (interface), self-hosted as static files (see [Fonts](#fonts))
 - **Palette:** one red-pink hue in four depths: paper, blush, rose, wine
 
 ## Run it
@@ -58,7 +58,7 @@ POST routes only accept JSON. Combined with `SameSite=Lax`, that blocks cross-si
 
 ## Database
 
-Everything lives in the private `kotes` schema ([`supabase/schema.sql`](supabase/schema.sql)). Supabase's REST and GraphQL APIs don't expose it, and the `anon` and `authenticated` roles have no access to it. Only the Next.js server reaches it, over TLS verified against Supabase's root CA ([`src/server/supabase-ca.mjs`](src/server/supabase-ca.mjs)).
+In the Supabase dashboard, the tables appear under **Table Editor → schema `kotes`** (not `public`). Everything lives in the private `kotes` schema ([`supabase/schema.sql`](supabase/schema.sql)). Supabase's REST and GraphQL APIs don't expose it, and the `anon` and `authenticated` roles have no access to it. Only the Next.js server reaches it, over TLS verified against Supabase's root CA ([`src/server/supabase-ca.mjs`](src/server/supabase-ca.mjs)).
 
 | Table | Holds |
 | --- | --- |
@@ -87,12 +87,19 @@ Each reader has a weight for every theme (`love`, `stoic`, …) and for every au
 
 ## Fonts
 
-The fonts are self-hosted from [`src/fonts`](src/fonts) as static, Latin-only WOFF2 files (OFL licences included), about 250 KB in total. Google serves these families as *variable* fonts, which caused two problems:
+The fonts are self-hosted from [`src/fonts`](src/fonts) as static, Latin-only WOFF2 files (OFL licences included), about 190 KB in total. [`scripts/build-fonts.py`](scripts/build-fonts.py) builds them from Google Fonts' sources. Two lessons shaped this:
 
-- WebKit (every iPhone browser) rendered them at their thinnest weight: Manrope 200, Cormorant 300, Bodoni 400.
-- Bodoni's optical-size axis shrank its hairlines to nothing at headline sizes.
+- **Static, not variable.** WebKit (every iPhone browser) rendered variable fonts at their thinnest weight.
+- **Sturdy hairlines.** Bodoni Moda and Cormorant Garamond look luxurious, but their thinnest strokes vanished on phone screens: the italic "kotes" read as "koles". DM Serif Display and EB Garamond keep that look and hold up at phone resolution.
 
-[`scripts/build-fonts.py`](scripts/build-fonts.py) builds each weight as its own file, with Bodoni fixed at optical size 28.
+## Speed
+
+- **Sessions are remembered on the device.** Returning readers see their pages at once, and `/api/me` re-checks the session in the background, also returning whether onboarding is done.
+- **Sessions are cached on the server for 60 s.** Most API calls cost a single database round trip.
+- **Database connections stay open and are warmed at startup.** Opening one to Supabase costs about a second.
+- **Views are batched.** The feed sends them every 5 seconds, every 8 views, or when the page is hidden, never one request per card.
+
+The database round trip from India to the Tokyo Supabase region is about 125 ms, and it now sets the floor for every API call. Moving the project to Mumbai (`ap-south-1`) would cut that to about 20–30 ms: create a project there, run `npm run db:apply`, and switch `DATABASE_URL`.
 
 ## Adding quotes
 
@@ -101,7 +108,7 @@ Edit [`src/data/quotes.json`](src/data/quotes.json), then run `npm run seed:sql`
 ## Layout
 
 ```
-src/app/            landing, login, onboarding, feed, library ("Kept"), you
+src/app/            landing, login, onboarding, feed, library ("Kept"), you, privacy
 src/app/api/        auth (code, verify, signout), me, feed, reactions, views, library, taste, health
 src/server/         db pool, auth, rate limits, Resend email, data access (server-only)
 src/fonts/          static WOFF2 fonts (built by scripts/build-fonts.py)

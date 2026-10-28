@@ -86,7 +86,9 @@ export default function Landing() {
         <span className="wordmark">
           kotes<i>.</i>
         </span>
-        <span className="fine">Made for readers. © 2026</span>
+        <span className="fine">
+          <Link href="/privacy">Privacy</Link> · © 2026
+        </span>
       </footer>
     </main>
   );

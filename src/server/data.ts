@@ -43,9 +43,16 @@ export async function react(reader: string, id: unknown, k: unknown, on: unknown
   }
 }
 
-export async function recordView(reader: string, id: unknown, dwellMs: unknown) {
-  const ms = Math.min(Math.max(Math.round(Number(dwellMs) || 0), 0), 3_600_000);
-  await query("select kotes.record_view($1, $2, $3)", [reader, quoteId(id), ms]);
+// Views arrive in batches from the feed: one database round trip for all of them.
+export async function recordViews(reader: string, views: unknown) {
+  if (!Array.isArray(views) || views.length === 0) return;
+  const batch = views.slice(0, 50) as { quoteId?: unknown; dwellMs?: unknown }[];
+  const ids = batch.map((v) => quoteId(v?.quoteId));
+  const ms = batch.map((v) => Math.min(Math.max(Math.round(Number(v?.dwellMs) || 0), 0), 3_600_000));
+  await query(
+    "select kotes.record_view($1, v.q, v.d) from unnest($2::bigint[], $3::int[]) as v(q, d)",
+    [reader, ids, ms],
+  );
 }
 
 export async function getLibrary(reader: string, k: unknown) {

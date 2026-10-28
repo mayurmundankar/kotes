@@ -90,7 +90,9 @@ export default function You() {
         <button className={s.delete} onClick={deleteAccount} disabled={deleting} data-armed={confirming || undefined}>
           {deleting ? "Deleting…" : confirming ? "Tap again to delete everything" : "Delete my account"}
         </button>
-        <p className="fine">kotes is for readers only. No posting, no followers, no noise.</p>
+        <p className="fine">
+          kotes is for readers only. No posting, no followers, no noise. <Link href="/privacy">Privacy</Link>
+        </p>
       </section>
 
       <Nav />

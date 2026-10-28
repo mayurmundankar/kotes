@@ -17,8 +17,8 @@
   --ink-12: rgb(42 7 17 / 0.12);
   --ink-06: rgb(42 7 17 / 0.06);
 
-  --display: var(--font-display), "Bodoni 72", Didot, serif;
-  --read: var(--font-read), Garamond, serif;
+  --display: var(--font-display), Didot, Georgia, serif;
+  --read: var(--font-read), Garamond, Georgia, serif;
   --ui: var(--font-ui), system-ui, sans-serif;
 
   --gutter: 24px;
@@ -42,6 +42,8 @@ body {
 }
 
 body {
+  /* The display face ships one weight; never fake-bold it (or Garamond's 600). */
+  font-synthesis-weight: none;
   background: var(--rose-mist);
   color: var(--wine);
   font-family: var(--ui);
@@ -141,6 +143,12 @@ input {
   font-size: 12.5px;
   color: var(--ink-40);
   letter-spacing: 0.01em;
+}
+
+.fine a,
+a.fine {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* ── Controls ─────────────────────────────────────────────── */
@@ -374,7 +382,7 @@ input {
 @keyframes rise {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -383,13 +391,13 @@ input {
 }
 
 .rise {
-  animation: rise 0.9s var(--ease) both;
+  animation: rise 0.45s var(--ease) both;
 }
 
-.rise.d1 { animation-delay: 0.08s; }
-.rise.d2 { animation-delay: 0.16s; }
-.rise.d3 { animation-delay: 0.24s; }
-.rise.d4 { animation-delay: 0.32s; }
+.rise.d1 { animation-delay: 0.04s; }
+.rise.d2 { animation-delay: 0.08s; }
+.rise.d3 { animation-delay: 0.12s; }
+.rise.d4 { animation-delay: 0.16s; }
 
 @media (prefers-reduced-motion: reduce) {
   *,

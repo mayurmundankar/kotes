@@ -1,36 +1,29 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { SessionProvider } from "@/components/session";
 import "./globals.css";
 
-// Self-hosted static fonts, built by scripts/build-fonts.py from Google's
-// variable fonts. The variable versions rendered at their thinnest weight in
-// WebKit (every iPhone browser), and Bodoni's optical-size axis thinned its
-// hairlines to nothing at headline sizes. Static files look the same everywhere.
+// Self-hosted static fonts, built by scripts/build-fonts.py. Static files because
+// variable fonts rendered at their thinnest weight in WebKit (iPhone); these faces
+// because Bodoni's and Cormorant's hairlines vanished on phone screens.
 
-// Display: brand, headlines.
-const bodoni = localFont({
+// Display: brand, headlines. One weight by design: it is already a heavy Didone.
+const dmSerif = localFont({
   variable: "--font-display",
   src: [
-    { path: "../fonts/bodoni/bodoni-400.woff2", weight: "400", style: "normal" },
-    { path: "../fonts/bodoni/bodoni-500.woff2", weight: "500", style: "normal" },
-    { path: "../fonts/bodoni/bodoni-600.woff2", weight: "600", style: "normal" },
-    { path: "../fonts/bodoni/bodoni-700.woff2", weight: "700", style: "normal" },
-    { path: "../fonts/bodoni/bodoni-400-italic.woff2", weight: "400", style: "italic" },
-    { path: "../fonts/bodoni/bodoni-500-italic.woff2", weight: "500", style: "italic" },
+    { path: "../fonts/dmserif/dmserif-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/dmserif/dmserif-400-italic.woff2", weight: "400", style: "italic" },
   ],
   adjustFontFallback: "Times New Roman",
 });
 
 // Reading: every quote.
-const cormorant = localFont({
+const garamond = localFont({
   variable: "--font-read",
   src: [
-    { path: "../fonts/cormorant/cormorant-400.woff2", weight: "400", style: "normal" },
-    { path: "../fonts/cormorant/cormorant-500.woff2", weight: "500", style: "normal" },
-    { path: "../fonts/cormorant/cormorant-600.woff2", weight: "600", style: "normal" },
-    { path: "../fonts/cormorant/cormorant-400-italic.woff2", weight: "400", style: "italic" },
-    { path: "../fonts/cormorant/cormorant-500-italic.woff2", weight: "500", style: "italic" },
+    { path: "../fonts/garamond/garamond-400.woff2", weight: "400", style: "normal" },
+    { path: "../fonts/garamond/garamond-500.woff2", weight: "500", style: "normal" },
+    { path: "../fonts/garamond/garamond-400-italic.woff2", weight: "400", style: "italic" },
+    { path: "../fonts/garamond/garamond-500-italic.woff2", weight: "500", style: "italic" },
   ],
   adjustFontFallback: "Times New Roman",
 });
@@ -62,11 +55,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${bodoni.variable} ${cormorant.variable} ${manrope.variable}`}>
+    <html lang="en" className={`${dmSerif.variable} ${garamond.variable} ${manrope.variable}`}>
       <body>
-        <SessionProvider>
-          <div className="app">{children}</div>
-        </SessionProvider>
+        <div className="app">{children}</div>
       </body>
     </html>
   );

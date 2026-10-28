@@ -14,7 +14,9 @@ function pool() {
       ssl: { ca: SUPABASE_CA },
       max: Number(process.env.DATABASE_POOL_MAX ?? 5),
       connectionTimeoutMillis: 10_000,
-      idleTimeoutMillis: 30_000,
+      // Opening a connection costs ~1s (TLS + auth, far away); keep them open.
+      idleTimeoutMillis: 0,
+      keepAlive: true,
     });
   }
   return g.kotesPool;

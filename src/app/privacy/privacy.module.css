@@ -1,0 +1,122 @@
+.page {
+  padding-bottom: calc(48px + var(--safe-b));
+}
+
+.back {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-left: -10px;
+}
+
+.page > :global(.eyebrow) {
+  margin-top: 40px;
+}
+
+.title {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 44px;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  margin: 14px 0 26px;
+}
+
+.title em {
+  font-style: italic;
+  color: var(--rose);
+}
+
+.short p,
+.block p,
+.block dd {
+  font-family: var(--read);
+  font-size: 19px;
+  line-height: 1.45;
+  color: var(--ink-60);
+}
+
+.short ul {
+  list-style: none;
+  margin: 18px 0 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.short li {
+  position: relative;
+  padding-left: 20px;
+  font-family: var(--read);
+  font-size: 19px;
+  line-height: 1.35;
+}
+
+.short li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 8px;
+  height: 1px;
+  background: var(--rose);
+}
+
+.block {
+  border-top: 1px solid var(--ink-12);
+  padding: 24px 0 26px;
+}
+
+.block h2 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 26px;
+  letter-spacing: -0.01em;
+  margin-bottom: 12px;
+}
+
+.block p + p {
+  margin-top: 12px;
+}
+
+.block dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-top: 16px;
+}
+
+.block dt:first-child {
+  margin-top: 0;
+}
+
+.block dd {
+  margin-top: 4px;
+}
+
+.block em {
+  font-style: italic;
+  color: var(--wine);
+}
+
+.block a {
+  color: var(--rose-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.block code {
+  font-family: var(--ui);
+  font-size: 0.8em;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--rose-mist);
+  color: var(--wine);
+}
+
+.foot {
+  border-top: 1px solid var(--ink-12);
+  padding-top: 24px;
+}
