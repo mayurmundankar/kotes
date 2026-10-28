@@ -34,6 +34,8 @@ const nextConfig: NextConfig = {
   // Self-contained server bundle for the Docker image (see Dockerfile).
   output: "standalone",
   poweredByHeader: false,
+  // The share-image route reads these TrueType fonts from disk at runtime.
+  outputFileTracingIncludes: { "/api/share/*": ["./src/fonts/og/**"] },
   async headers() {
     const security = [
       { key: "X-Content-Type-Options", value: "nosniff" },

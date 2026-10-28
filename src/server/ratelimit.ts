@@ -59,6 +59,7 @@ export const READER_LIMITS = {
   views: [60, 10 * MIN], // batches of up to 8
   library: [60, 10 * MIN],
   taste: [60, 10 * MIN],
+  share: [30, 10 * MIN], // each image costs real CPU to draw
 } as const;
 
 export function limitReader(readerId: string, route: keyof typeof READER_LIMITS) {

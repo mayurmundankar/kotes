@@ -1,39 +1,53 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { renderQuoteImage, SHARE_TONES, type ShareTone } from "@/lib/share-image";
+import { reportError } from "@/lib/backend";
+import { SHARE_TONES, type ShareTone } from "@/lib/tones";
 import s from "./share-sheet.module.css";
 
 type Props = {
-  quote: { id: number; text: string; tags: string[] } | null;
+  quote: { id: number } | null;
   tone?: ShareTone;
   onClose: () => void;
   toast: (m: string) => void;
 };
 
-// Previews the story image, then shares it from a fresh tap: iOS only lets a
-// page open the share sheet directly from a user's tap.
+// Previews the story image (drawn by the server, so every browser gets the
+// same result), then shares it from a fresh tap: iOS only lets a page open the
+// share sheet directly from a user's tap.
 export function ShareSheet({ quote, tone: initialTone = "rose", onClose, toast }: Props) {
   const [tone, setTone] = useState<ShareTone>(initialTone);
   const [image, setImage] = useState<{ blob: Blob; url: string } | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!quote) return;
     let alive = true;
     let url = "";
-    renderQuoteImage(quote, tone)
+    fetch(`/api/share/${quote.id}?tone=${tone}`, { credentials: "same-origin" })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`share image ${res.status}: ${(await res.json().catch(() => ({}))).error ?? ""}`);
+        return res.blob();
+      })
       .then((blob) => {
         if (!alive) return;
         url = URL.createObjectURL(blob);
         setImage({ blob, url });
+        setFailed(false);
       })
-      .catch(() => toast("Couldn't make the image."));
+      .catch((e) => {
+        if (!alive) return;
+        setFailed(true);
+        reportError("share-image", e);
+        toast("Couldn't make the image. Try again.");
+      });
     return () => {
       alive = false;
       if (url) URL.revokeObjectURL(url);
       setImage(null);
     };
-  }, [quote, tone, toast]);
+  }, [quote, tone, attempt, toast]);
 
   useEffect(() => {
     if (!quote) return;
@@ -45,7 +59,10 @@ export function ShareSheet({ quote, tone: initialTone = "rose", onClose, toast }
   if (!quote) return null;
 
   const file = image && new File([image.blob], `kotes-${quote.id}.png`, { type: "image/png" });
-  const canShareFile = !!file && typeof navigator !== "undefined" && !!navigator.canShare?.({ files: [file] });
+  let canShareFile = false;
+  try {
+    canShareFile = !!file && !!navigator.canShare?.({ files: [file] });
+  } catch {}
 
   async function share() {
     if (!file) return;
@@ -53,7 +70,9 @@ export function ShareSheet({ quote, tone: initialTone = "rose", onClose, toast }
       await navigator.share({ files: [file], text: `Found on kotes · ${location.origin}` });
       onClose();
     } catch (e) {
-      if ((e as Error).name !== "AbortError") save();
+      if ((e as Error).name === "AbortError") return; // they closed the share sheet
+      reportError("share-sheet", e);
+      save();
     }
   }
 
@@ -71,8 +90,16 @@ export function ShareSheet({ quote, tone: initialTone = "rose", onClose, toast }
       <div className={s.sheet} role="dialog" aria-modal aria-label="Share quote" onClick={(e) => e.stopPropagation()}>
         <span className={s.grip} aria-hidden />
         <div className={s.preview}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- a local blob, not an optimisable asset */}
-          {image ? <img src={image.url} alt="Preview of the image to share" /> : <span className="spinner" />}
+          {image ? (
+            // eslint-disable-next-line @next/next/no-img-element -- a local blob, not an optimisable asset
+            <img src={image.url} alt="Preview of the image to share" />
+          ) : failed ? (
+            <button className={s.link} onClick={() => setAttempt((n) => n + 1)}>
+              Couldn&apos;t load. Tap to retry.
+            </button>
+          ) : (
+            <span className="spinner" />
+          )}
         </div>
 
         <div className={s.tones} role="radiogroup" aria-label="Colour">

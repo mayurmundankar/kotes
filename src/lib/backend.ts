@@ -33,19 +33,28 @@ const listeners = new Set<(s: Session | null) => void>();
 const emit = (s: Session | null) => listeners.forEach((cb) => cb(s));
 
 async function api<T>(path: string, init?: { method?: string; body?: unknown; keepalive?: boolean }): Promise<T> {
-  const res = await fetch(`/api/${path}`, {
-    method: init?.method ?? (init?.body === undefined ? "GET" : "POST"),
-    headers: init?.body === undefined ? undefined : { "Content-Type": "application/json" },
-    body: init?.body === undefined ? undefined : JSON.stringify(init.body),
-    keepalive: init?.keepalive,
-    credentials: "same-origin",
-    cache: "no-store",
-  });
+  let res: Response;
+  try {
+    res = await fetch(`/api/${path}`, {
+      method: init?.method ?? (init?.body === undefined ? "GET" : "POST"),
+      headers: init?.body === undefined ? undefined : { "Content-Type": "application/json" },
+      body: init?.body === undefined ? undefined : JSON.stringify(init.body),
+      keepalive: init?.keepalive,
+      credentials: "same-origin",
+      cache: "no-store",
+    });
+  } catch {
+    throw new ApiError("Couldn't reach kotes. Check your connection and try again.", 0);
+  }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     // The session ended elsewhere (signed out, expired): send them back to sign in.
     if (res.status === 401) emit(null);
-    throw new ApiError(data.error ?? "Something went wrong.", res.status, data.retryAfter);
+    // No JSON error means kotes itself didn't answer: Cloudflare's own error
+    // page while the server restarts or is unreachable.
+    const fallback =
+      res.status >= 500 ? "kotes is taking a breath. Try again in a moment." : "Something went wrong. Try again.";
+    throw new ApiError(data.error ?? fallback, res.status, data.retryAfter);
   }
   return data as T;
 }
@@ -69,6 +78,12 @@ function flushViews() {
 if (typeof window !== "undefined") {
   addEventListener("pagehide", flushViews);
   document.addEventListener("visibilitychange", () => document.visibilityState === "hidden" && flushViews());
+}
+
+/** Sends an unexpected browser error to the server log. Never throws. */
+export function reportError(where: string, err: unknown) {
+  const message = err instanceof Error ? `${err.name}: ${err.message}` : String(err);
+  api("client-error", { body: { where, message } }).catch(() => {});
 }
 
 export const backend = {

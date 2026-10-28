@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ApiError, backend, OTP_LENGTH } from "@/lib/backend";
+import { ApiError, backend, OTP_LENGTH, reportError } from "@/lib/backend";
 import { useGuard } from "@/components/session";
 import { useTurnstile } from "@/components/turnstile";
 import { Back } from "@/components/icons";
@@ -50,6 +50,8 @@ export default function Login() {
     } catch (err) {
       setError((err as Error).message);
       if (err instanceof ApiError && err.retryAfter) setWait(err.retryAfter);
+      // Expected refusals (limits, bad email) carry a 4xx; anything else is a bug worth seeing.
+      if (!(err instanceof ApiError) || err.status === 0 || err.status >= 500) reportError("signup-code", err);
     } finally {
       resetHuman();
       setBusy(false);

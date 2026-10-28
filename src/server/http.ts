@@ -38,14 +38,14 @@ function assertSameOrigin(req: Request) {
 
 // Wraps a route handler: same-origin check, then known errors become JSON and
 // anything else is logged without leaking details to the client.
-export function handle(fn: (req: Request) => Promise<Response>) {
-  return async (req: Request) => {
+export function handle<C = unknown>(fn: (req: Request, ctx: C) => Promise<Response>) {
+  return async (req: Request, ctx: C) => {
     // Every API call is per-reader: never prerender. Outside the try so Next's
     // prerender signal isn't swallowed.
     await connection();
     try {
       assertSameOrigin(req);
-      return await fn(req);
+      return await fn(req, ctx);
     } catch (e) {
       if (e instanceof HttpError) {
         const headers = e.retryAfter ? { "Retry-After": String(e.retryAfter) } : undefined;

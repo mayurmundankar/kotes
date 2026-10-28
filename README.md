@@ -89,7 +89,7 @@ Layered so that no single failure exposes readers. Every item below was tested a
 
 **Container**
 - Read-only filesystem, all Linux capabilities dropped, `no-new-privileges`, memory/CPU/process limits, non-root user, no npm in the image, dependencies installed with install scripts disabled, logs rotated.
-- Security events are JSON lines: `docker logs kotes 2>&1 | grep '"sec"'` (emails are pseudonymised tags).
+- Security events are JSON lines: `docker logs kotes 2>&1 | grep '"sec"'` (emails are pseudonymised tags). Unexpected errors in readers' browsers are reported there too, as `"sec":"client_error"` with the browser name.
 
 **Do these in the dashboards (code can't):**
 1. **Cloudflare → Turnstile → Add widget** for `kotes.mayurmundankar.com` (mode: *Managed*). Put the keys in the server's `.env`.
@@ -132,7 +132,7 @@ Each reader has a weight for every theme (`love`, `stoic`, …) and for every au
 
 ## Sharing
 
-Share opens a preview of a 1080×1920 story image, drawn on a canvas in the browser with the app's fonts and the card's colour (switchable). On phones, **Share to stories & chats** passes the image file to the system share sheet, which lists Instagram, Facebook, WhatsApp and so on. Elsewhere it's saved as a PNG. The header and footer stay out of the top and bottom 250 px, which Instagram and WhatsApp cover with their own controls.
+Share opens a preview of a 1080×1920 story image in the card's colour (switchable). The **server** draws it (`/api/share/[id]?tone=`, using Next's `ImageResponse` and TrueType copies of the fonts in `src/fonts/og`), so every browser gets the same image. Drawing it in the browser failed on some phones, Edge on Android among them. It needs a session, is limited to 30 per reader per 10 minutes, and takes about 0.3 s, plus a few seconds for the first share after a restart. On phones, **Share to stories & chats** passes the image file to the system share sheet, which lists Instagram, Facebook, WhatsApp and so on. Elsewhere it's saved as a PNG. The header and footer stay out of the top and bottom 250 px, which Instagram and WhatsApp cover with their own controls.
 
 Links to the site preview with [`public/og.png`](public/og.png), a 1200×630 card in the hero's style. To change it, edit [`scripts/og/og.html`](scripts/og/og.html) and run `npm run og` (needs `npm i -D playwright` and `npx playwright install chromium`). `SITE_URL` (default `https://kotes.mayurmundankar.com`) sets the absolute URL used in previews, and is read at build time.
 
@@ -147,7 +147,7 @@ The fonts are self-hosted from [`src/fonts`](src/fonts) as static, Latin-only WO
 
 - **Sessions are remembered on the device.** Returning readers see their pages at once, and `/api/me` re-checks the session in the background, also returning whether onboarding is done.
 - **Sessions are cached on the server for 60 s.** Most API calls cost a single database round trip.
-- **Database connections stay open and are warmed at startup.** Opening one to Supabase costs about a second.
+- **Database connections stay open and are warmed at startup.** Opening one to Supabase costs about a second. TCP keepalive (every 10 s) holds router NAT entries open, and connections idle for 10 minutes are retired. A connection that drops is discarded and the query retried once, rather than crashing the server, which used to surface as a stray "Something went wrong" at sign-up.
 - **Views are batched.** The feed sends them every 5 seconds, every 8 views, or when the page is hidden, never one request per card.
 
 The database round trip from India to the Tokyo Supabase region is about 125 ms, and it now sets the floor for every API call. Moving the project to Mumbai (`ap-south-1`) would cut that to about 20–30 ms: create a project there, run `npm run db:apply`, and switch `DATABASE_URL`.

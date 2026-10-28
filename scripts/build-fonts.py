@@ -11,6 +11,9 @@ Usage (pip install fonttools brotli):
      ofl/manrope/Manrope[wght].ttf
      (prefix each with its folder name, e.g. "manrope-Manrope[wght].ttf")
   2. python scripts/build-fonts.py <that folder> src/fonts
+
+Also writes src/fonts/og/*.ttf: TrueType copies of the faces the server uses to
+draw share images (Next's image renderer reads TTF/OTF/WOFF, not WOFF2).
 """
 import sys
 from pathlib import Path
@@ -29,6 +32,37 @@ JOBS = [
   ("ebgaramond-EBGaramond-Italic[wght].ttf", "garamond", "italic", [400, 500]),
   ("manrope-Manrope[wght].ttf", "manrope", "normal", [400, 500, 600, 700]),
 ]
+
+# Faces the share-image renderer needs, as TTF.
+OG_JOBS = [
+  ("dmserifdisplay-DMSerifDisplay-Regular.ttf", "dmserif-400", None),
+  ("dmserifdisplay-DMSerifDisplay-Italic.ttf", "dmserif-400-italic", None),
+  ("ebgaramond-EBGaramond[wght].ttf", "garamond-500", 500),
+  ("manrope-Manrope[wght].ttf", "manrope-600", 600),
+]
+
+
+def subset_font(font, flavor):
+    opts = subset.Options()
+    opts.flavor = flavor
+    opts.layout_features = ["kern", "liga", "clig", "calt", "ccmp", "locl", "mark", "mkmk", "onum", "lnum", "pnum", "tnum"]
+    opts.name_IDs = ["*"]
+    opts.notdef_outline = True
+    sub = subset.Subsetter(opts)
+    sub.populate(unicodes=subset.parse_unicodes(LATIN))
+    sub.subset(font)
+    font.flavor = flavor
+    return font
+
+
+for file, name, weight in OG_JOBS:
+    font = TTFont(src / file)
+    if "fvar" in font:
+        font = instancer.instantiateVariableFont(font, {"wght": weight}, updateFontNames=False)
+    dest = out / "og" / f"{name}.ttf"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    subset_font(font, None).save(dest)
+    print("  ", f"og/{dest.name}", dest.stat().st_size // 1024, "KB")
 
 for file, family, style, weights in JOBS:
     variable = "fvar" in TTFont(src / file)
