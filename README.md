@@ -18,8 +18,11 @@ npm run dev
 
 | Variable | What it is |
 | --- | --- |
-| `DATABASE_URL` | Supabase Postgres connection string. The direct host (`db.<ref>.supabase.co`) is IPv6-only. In Docker or on IPv4 networks, use the **Session pooler** (`aws-0-<region>.pooler.supabase.com:5432`, user `postgres.<ref>`). |
+| `DATABASE_URL` | The app's **least-privilege** `kotes_app` login. The direct host (`db.<ref>.supabase.co`) is IPv6-only. In Docker or on IPv4 networks, use the **Session pooler** (`aws-0-<region>.pooler.supabase.com:5432`, user `kotes_app.<ref>`). |
+| `DATABASE_ADMIN_URL` | The `postgres` login, used **only** by `npm run db:apply`. Keep it off the app server. |
+| `APP_DB_PASSWORD` | `kotes_app`'s password. `db:apply` sets it on the role. Not needed on the app server. |
 | `AUTH_SECRET` | 32+ random characters. Used to hash sign-in codes. |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile keys (the human check). Empty = off. |
 | `RESEND_API_KEY` | Resend API key. |
 | `RESEND_FROM` | Sender, e.g. `kotes <noreply.kotes@your-domain.com>`, on a domain verified in Resend. |
 
@@ -35,6 +38,7 @@ cp .env.example .env        # fill it in, using the Session pooler for DATABASE_
 docker compose up -d --build
 ```
 
+- The server's `.env` needs only `DATABASE_URL` (the `kotes_app` pooler string), `AUTH_SECRET`, `RESEND_API_KEY`, `RESEND_FROM` and the Turnstile keys. Never the admin URL.
 - The container listens on `127.0.0.1:3000`. Put it behind something that terminates **HTTPS**, such as Cloudflare Tunnel, Caddy or nginx. In production, sign-in cookies are `Secure`, so signing in over plain `http://` won't work.
 - The proxy must pass the real client IP (`CF-Connecting-IP` or `X-Forwarded-For`), because the per-IP rate limits key on it. Don't expose port 3000 to the internet directly.
 - `GET /api/health` returns `{"ok":true}` when the server can reach the database. Docker uses it as the container health check.
@@ -50,11 +54,50 @@ docker compose up -d --build
 
 POST routes only accept JSON. Combined with `SameSite=Lax`, that blocks cross-site form attacks.
 
-**Limits:** per email, one code per 60s and 5 per hour; per IP, 10 code requests per hour and 30 verify attempts per 10 minutes; across the whole app, `MAX_CODES_PER_HOUR`. The per-IP limits live in memory, which is right for one server. With several instances, move them to the database or Redis.
+**Limits:** see [Security](#security).
 
 **Account deletion:** *You → Delete my account* calls `DELETE /api/me`. It removes the reader, their sessions, taste, likes, saves and views, and their login codes.
 
 **Headers:** in production every response carries CSP, HSTS, `X-Frame-Options: DENY`, `nosniff`, a strict referrer policy and a permissions policy, and `/api/*` is `no-store`.
+
+## Security
+
+Layered so that no single failure exposes readers. Every item below was tested against a production build with automated attack scripts.
+
+**Bots and AI agents**
+- **Cloudflare Turnstile** on the sign-in step. It's invisible for most people and shows a checkbox only when unsure. The server verifies every token with Cloudflare and fails closed if it can't.
+- **Honeypot field** and the browser's **automation flag** (`navigator.webdriver`, set by Selenium, Playwright, Puppeteer and most agent browsers). Both get a *fake* "code sent", so bots learn nothing.
+- **robots.txt** turns away ~35 AI crawlers and scrapers by name, and all bots from the app and API. `X-Robots-Tag: noindex…` on private pages and `noai, noimageai` everywhere.
+- **Per-reader limits** far above human reading speed: 40 feed batches (320 quotes) per 10 min. Signed-in scrapers hit the ceiling fast.
+
+**Sign-in**
+- Codes: 6 digits, HMAC-hashed, 10 min, single use, 5 tries each.
+- Per email: one code per 60 s, 5 per hour, 10 per day (blunts email bombing); **15 wrong guesses per day locks the email** for the rest of the day. That caps a determined attacker at about 0.5% odds per year against one account.
+- Per IP: 20 code requests per hour, 30 verifies per 10 min (loose, since mobile carriers share IPs). App-wide: `MAX_CODES_PER_HOUR`.
+- Strict email format: no quotes, commas or angle brackets ever reach the mail provider.
+
+**Sessions and requests**
+- Session cookie `__Host-kotes_session`: `Secure`, `HttpOnly`, `SameSite=Strict`, and no other `*.mayurmundankar.com` site can set or overwrite it. 256-bit random token, stored only as SHA-256.
+- CSRF is blocked three ways: `Sec-Fetch-Site`/`Origin` must be same-origin, bodies must be JSON, and the cookie is Strict.
+- Request bodies are capped at 16 KB; every API route has a per-IP ceiling.
+- Headers: strict CSP (self + Turnstile only, no framing), HSTS (2 years), COOP, CORP, `nosniff`, no referrer leakage, browser features off.
+
+**Database**
+- The app connects as **`kotes_app`** ([`supabase/app-role.sql`](supabase/app-role.sql)): only the `kotes` schema, only the operations kotes performs (quotes are read-only), no DDL, no access to Supabase's auth, storage or Vault, and a **5 s statement timeout**. The server warns at startup if it's given any other login.
+- The `kotes` schema isn't exposed by Supabase's REST/GraphQL APIs, and RLS denies `anon`/`authenticated` everything.
+- TLS to the database is verified against Supabase's root CA. Every query uses bound parameters.
+
+**Container**
+- Read-only filesystem, all Linux capabilities dropped, `no-new-privileges`, memory/CPU/process limits, non-root user, no npm in the image, dependencies installed with install scripts disabled, logs rotated.
+- Security events are JSON lines: `docker logs kotes 2>&1 | grep '"sec"'` (emails are pseudonymised tags).
+
+**Do these in the dashboards (code can't):**
+1. **Cloudflare → Turnstile → Add widget** for `kotes.mayurmundankar.com` (mode: *Managed*). Put the keys in the server's `.env`.
+2. **Cloudflare → Security → Bots:** turn on **Block AI bots** and **Bot Fight Mode**. Optionally turn on **AI Labyrinth**, which traps crawlers that ignore robots.txt.
+3. **Cloudflare → Security → WAF → Rate limiting rules:** e.g. `/api/auth/` at 10 requests/min per IP, block for 10 min. This stops floods before they reach your server.
+4. **Cloudflare → SSL/TLS:** mode *Full (strict)*, plus *Always Use HTTPS* and *Minimum TLS 1.2*.
+5. **Supabase → Database → Settings:** reset the `postgres` password (it was shared during setup), then update `DATABASE_ADMIN_URL` wherever you run `db:apply`.
+6. **Supabase → Authentication:** keep email sign-ups off and the Send Email hook off. kotes doesn't use Supabase Auth.
 
 ## Database
 

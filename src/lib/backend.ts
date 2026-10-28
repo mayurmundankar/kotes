@@ -72,8 +72,8 @@ if (typeof window !== "undefined") {
 }
 
 export const backend = {
-  async sendCode(email: string) {
-    await api("auth/code", { body: { email } });
+  async sendCode(email: string, proof: { turnstile: string; website: string; automated: boolean }) {
+    await api("auth/code", { body: { email, ...proof } });
   },
   async verifyCode(email: string, code: string) {
     const { reader, onboarded } = await api<{ reader: User; onboarded: boolean }>("auth/verify", { body: { email, code } });

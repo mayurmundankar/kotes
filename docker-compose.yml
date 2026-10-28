@@ -11,3 +11,20 @@ services:
     # that terminates HTTPS. Sign-in cookies are HTTPS-only in production.
     ports:
       - "127.0.0.1:3000:3000"
+
+    # ── Hardening: if the app were ever compromised, it can't dig in ──
+    read_only: true # nothing on disk can be changed
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+      - /app/.next/cache:size=64m,uid=1000,gid=1000
+    cap_drop: [ALL] # no Linux capabilities at all
+    security_opt:
+      - no-new-privileges:true # no setuid escalation
+    pids_limit: 200
+    mem_limit: 512m
+    cpus: 1.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

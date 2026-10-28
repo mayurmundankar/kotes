@@ -1,0 +1,6 @@
+# Found a security issue in kotes? Please tell us privately first.
+Contact: mailto:privacy.kotes@mayurmundankar.com
+Expires: 2027-10-28T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://kotes.mayurmundankar.com/.well-known/security.txt
+Policy: https://kotes.mayurmundankar.com/privacy

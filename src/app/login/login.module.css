@@ -141,3 +141,21 @@
   padding: 12px;
 }
 
+
+/* Off-screen rather than display:none, which smarter bots skip. */
+.trap {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.human {
+  display: flex;
+  justify-content: center;
+}
+
+.human:not(:empty) {
+  margin-top: 16px;
+}

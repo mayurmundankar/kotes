@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ApiError, backend, OTP_LENGTH } from "@/lib/backend";
 import { useGuard } from "@/components/session";
+import { useTurnstile } from "@/components/turnstile";
 import { Back } from "@/components/icons";
 import s from "./login.module.css";
 
 const RESEND_AFTER = 60;
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Matches the server: plain characters only.
+const EMAIL = /^[a-z0-9](?:[a-z0-9._%+-]{0,62}[a-z0-9_%+-])?@(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/;
 
 export default function Login() {
   useGuard("guest");
@@ -19,6 +21,8 @@ export default function Login() {
   const [error, setError] = useState("");
   const [wait, setWait] = useState(0);
   const codeRef = useRef<HTMLInputElement>(null);
+  const honeypot = useRef<HTMLInputElement>(null);
+  const { box: humanBox, getToken, reset: resetHuman, ready: humanReady } = useTurnstile();
 
   useEffect(() => {
     if (wait <= 0) return;
@@ -33,7 +37,11 @@ export default function Login() {
     setBusy(true);
     setError("");
     try {
-      await backend.sendCode(clean);
+      await backend.sendCode(clean, {
+        turnstile: await getToken(),
+        website: honeypot.current?.value ?? "",
+        automated: navigator.webdriver === true,
+      });
       setEmail(clean);
       setCode("");
       setStep("code");
@@ -43,6 +51,7 @@ export default function Login() {
       setError((err as Error).message);
       if (err instanceof ApiError && err.retryAfter) setWait(err.retryAfter);
     } finally {
+      resetHuman();
       setBusy(false);
     }
   }
@@ -106,9 +115,19 @@ export default function Login() {
             onChange={(e) => setEmail(e.target.value)}
             autoFocus
           />
+          {/* Honeypot: invisible to people, irresistible to form bots. */}
+          <input
+            ref={honeypot}
+            className={s.trap}
+            type="text"
+            name="website"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden
+          />
           <p className="error">{error}</p>
           <div className={s.foot}>
-            <button className="btn block" disabled={busy || !email}>
+            <button className="btn block" disabled={busy || !email || !humanReady}>
               {busy ? <span className="spinner" style={{ borderTopColor: "var(--paper)" }} /> : "Continue with email"}
             </button>
             <p className={s.promise}>
@@ -169,6 +188,9 @@ export default function Login() {
           </div>
         </div>
       )}
+
+      {/* Turnstile mounts here; empty unless Cloudflare needs a click. */}
+      <div ref={humanBox} className={s.human} />
     </main>
   );
 }

@@ -4,16 +4,27 @@ import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 
 import { query, tx } from "./db";
 import { sendCodeEmail } from "./email";
 import { HttpError } from "./http";
+import { emailTag, secLog } from "./seclog";
 import { OTP_LENGTH as CODE_LENGTH } from "@/lib/backend";
 
 const CODE_TTL_MIN = 10;
 const MAX_ATTEMPTS = 5; // per code
 const RESEND_AFTER_S = 60;
-const MAX_CODES_PER_HOUR = 5; // per email
+const MAX_CODES_PER_HOUR = 5; // per email: slows email bombing
+const MAX_CODES_PER_DAY = 10; // per email
+// Wrong guesses per email per rolling day, across all its codes. With 6 digits
+// this caps a determined attacker at ~0.5% odds per year against one account.
+const MAX_FAILURES_PER_DAY = 15;
 const MAX_CODES_GLOBAL_PER_HOUR = Number(process.env.MAX_CODES_PER_HOUR ?? 300); // protects the Resend quota
 const SESSION_DAYS = 90;
-const COOKIE = "kotes_session";
-const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// `__Host-` (HTTPS only): the browser refuses it from any other subdomain of
+// mayurmundankar.com, so a sibling site can't plant or overwrite the session.
+const SECURE = process.env.NODE_ENV === "production";
+const COOKIE = SECURE ? "__Host-kotes_session" : "kotes_session";
+const LEGACY_COOKIE = "kotes_session"; // pre-hardening name, migrated on next visit
+// Deliberately plain: no quotes, commas, angle brackets or other characters
+// that mean something to mail software.
+const EMAIL = /^[a-z0-9](?:[a-z0-9._%+-]{0,62}[a-z0-9_%+-])?@(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$/;
 
 export type Reader = { id: string; email: string };
 
@@ -32,14 +43,32 @@ export function normalizeEmail(raw: unknown) {
   return email;
 }
 
+/** True when this email has had too many wrong guesses today. */
+async function lockedOut(email: string) {
+  const [{ failures }] = await query<{ failures: number }>(
+    `select coalesce(sum(attempts), 0)::int as failures from kotes.login_codes
+     where email = $1 and created_at > now() - interval '1 day'`,
+    [email],
+  );
+  return failures >= MAX_FAILURES_PER_DAY;
+}
+
 /** Step one: email a fresh code. Earlier unused codes stop working. */
 export async function requestCode(email: string) {
-  const recent = await query<{ created_at: Date }>(
-    `select created_at from kotes.login_codes
-     where email = $1 and created_at > now() - interval '1 hour'
+  if (await lockedOut(email)) {
+    secLog("locked_out", { email: emailTag(email), step: "code" });
+    throw new HttpError("Too many wrong codes today. Try again tomorrow.", 429);
+  }
+  const recent = await query<{ created_at: Date; last_hour: boolean }>(
+    `select created_at, created_at > now() - interval '1 hour' as last_hour from kotes.login_codes
+     where email = $1 and created_at > now() - interval '1 day'
      order by created_at desc`,
     [email],
   );
+  if (recent.length >= MAX_CODES_PER_DAY) {
+    secLog("email_daily_cap", { email: emailTag(email) });
+    throw new HttpError("Too many codes asked for today. Try again tomorrow.", 429);
+  }
   if (recent.length) {
     const age = (Date.now() - recent[0].created_at.getTime()) / 1000;
     if (age < RESEND_AFTER_S) {
@@ -47,11 +76,17 @@ export async function requestCode(email: string) {
       throw new HttpError(`Give it ${wait}s before asking for another code.`, 429, wait);
     }
   }
-  if (recent.length >= MAX_CODES_PER_HOUR) throw new HttpError("Too many codes asked for. Try again in an hour.", 429);
+  if (recent.filter((r) => r.last_hour).length >= MAX_CODES_PER_HOUR) {
+    secLog("email_hourly_cap", { email: emailTag(email) });
+    throw new HttpError("Too many codes asked for. Try again in an hour.", 429);
+  }
   const [{ n }] = await query<{ n: number }>(
     "select count(*)::int as n from kotes.login_codes where created_at > now() - interval '1 hour'",
   );
-  if (n >= MAX_CODES_GLOBAL_PER_HOUR) throw new HttpError("kotes is very busy right now. Try again shortly.", 503);
+  if (n >= MAX_CODES_GLOBAL_PER_HOUR) {
+    secLog("global_email_cap", { n });
+    throw new HttpError("kotes is very busy right now. Try again shortly.", 503);
+  }
 
   const code = String(randomInt(0, 10 ** CODE_LENGTH)).padStart(CODE_LENGTH, "0");
   await query("update kotes.login_codes set used_at = now() where email = $1 and used_at is null", [email]);
@@ -65,7 +100,7 @@ export async function requestCode(email: string) {
     await sendCodeEmail(email, code);
   } catch (e) {
     await query("delete from kotes.login_codes where id = $1", [row.id]);
-    console.error(e);
+    secLog("email_send_failed", { email: emailTag(email), error: String((e as Error).message).slice(0, 200) });
     throw new HttpError("We couldn't send the email. Try again shortly.", 502);
   }
 
@@ -76,6 +111,10 @@ export async function requestCode(email: string) {
 export async function verifyCode(email: string, rawCode: unknown, userAgent: string | null): Promise<Reader> {
   const code = String(rawCode ?? "").replace(/\D/g, "");
   if (code.length !== CODE_LENGTH) throw new HttpError("That code doesn't look right.");
+  if (await lockedOut(email)) {
+    secLog("locked_out", { email: emailTag(email), step: "verify" });
+    throw new HttpError("Too many wrong codes today. Try again tomorrow.", 429);
+  }
 
   // Resolved inside the transaction, thrown after it commits, so wrong
   // guesses still count against the code.
@@ -116,7 +155,10 @@ export async function verifyCode(email: string, rawCode: unknown, userAgent: str
     return { reader, token };
   });
 
-  if ("error" in result) throw new HttpError(result.error!, 400);
+  if ("error" in result) {
+    secLog("verify_failed", { email: emailTag(email) });
+    throw new HttpError(result.error!, 400);
+  }
   await setCookie(result.token);
   return result.reader;
 }
@@ -124,11 +166,22 @@ export async function verifyCode(email: string, rawCode: unknown, userAgent: str
 async function setCookie(token: string) {
   (await cookies()).set(COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: SECURE,
+    // Strict: never sent on requests started by another site. Safe here because
+    // every API call comes from kotes' own pages.
+    sameSite: "strict",
     path: "/",
     maxAge: SESSION_DAYS * 86400,
   });
+}
+
+/** The session token from the cookie, moving a pre-hardening cookie to the new name. */
+async function readToken() {
+  const jar = await cookies();
+  const token = jar.get(COOKIE)?.value;
+  if (token || COOKIE === LEGACY_COOKIE) return { token, legacy: false };
+  const old = jar.get(LEGACY_COOKIE)?.value;
+  return { token: old, legacy: !!old };
 }
 
 // Verified sessions, remembered briefly so most API calls skip a database round
@@ -138,8 +191,8 @@ const sessionCache = new Map<string, { reader: Reader; until: number }>();
 
 /** The signed-in reader, or null. Sessions slide forward once a day. */
 export async function getReader(): Promise<Reader | null> {
-  const token = (await cookies()).get(COOKIE)?.value;
-  if (!token) return null;
+  const { token, legacy } = await readToken();
+  if (!token || token.length > 100) return null;
   const hash = hashToken(token);
   const hit = sessionCache.get(hash);
   if (hit && hit.until > Date.now()) return hit.reader;
@@ -153,6 +206,10 @@ export async function getReader(): Promise<Reader | null> {
   if (!row) {
     sessionCache.delete(hash);
     return null;
+  }
+  if (legacy) {
+    await setCookie(token);
+    (await cookies()).delete(LEGACY_COOKIE);
   }
   if (row.stale) {
     await query(
@@ -186,13 +243,14 @@ export async function requireReader() {
 }
 
 export async function signOut() {
-  const jar = await cookies();
-  const token = jar.get(COOKIE)?.value;
+  const { token } = await readToken();
   if (token) {
     sessionCache.delete(hashToken(token));
     await query("delete from kotes.sessions where token_hash = $1", [hashToken(token)]);
   }
+  const jar = await cookies();
   jar.delete(COOKIE);
+  jar.delete(LEGACY_COOKIE);
 }
 
 /** Deletes the reader; sessions, taste, likes and views cascade with them. */
@@ -200,5 +258,7 @@ export async function deleteReader(id: string) {
   const [row] = await query<{ email: string }>("delete from kotes.readers where id = $1 returning email", [id]);
   if (row) await query("delete from kotes.login_codes where email = $1", [row.email]);
   for (const [k, v] of sessionCache) if (v.reader.id === id) sessionCache.delete(k);
-  (await cookies()).delete(COOKIE);
+  const jar = await cookies();
+  jar.delete(COOKIE);
+  jar.delete(LEGACY_COOKIE);
 }

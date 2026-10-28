@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 // Where readers can write about their data. Left empty, the page points them
 // to in-app deletion only.
 const CONTACT_EMAIL = "privacy.kotes@mayurmundankar.com";
-const UPDATED = "28 October 2026";
+const UPDATED = "29 October 2026";
 
 export default function Privacy() {
   return (
@@ -62,7 +62,8 @@ export default function Privacy() {
           <dt>Your IP address</dt>
           <dd>
             Used briefly, in memory, to stop abuse such as floods of sign-in requests. We don&apos;t store it with your
-            account.
+            account. When something looks like abuse (a failed human check, too many requests), the IP address and a
+            scrambled tag of the email involved go into our server&apos;s security log, which is overwritten as it fills.
           </dd>
         </dl>
       </section>
@@ -75,7 +76,11 @@ export default function Privacy() {
           <dt>Resend</dt>
           <dd>Delivers your sign-in emails. It sees your email address and the message.</dd>
           <dt>Cloudflare</dt>
-          <dd>Carries traffic to kotes securely. Like any network, it sees IP addresses and requests.</dd>
+          <dd>
+            Carries traffic to kotes securely, and runs Turnstile, the quiet check on the sign-in page that tells
+            people from bots. Turnstile looks at signals from your browser and device; it doesn&apos;t use cookies to
+            track you across sites.
+          </dd>
         </dl>
         <p>Each processes data only to provide its service to us.</p>
       </section>
