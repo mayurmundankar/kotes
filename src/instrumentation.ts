@@ -6,6 +6,12 @@ export async function register() {
   const missing = ["DATABASE_URL", "AUTH_SECRET", "RESEND_API_KEY", "RESEND_FROM"].filter((k) => !process.env[k]);
   if (missing.length) throw new Error(`kotes: missing environment variables: ${missing.join(", ")}`);
   if (process.env.AUTH_SECRET!.length < 32) throw new Error("kotes: AUTH_SECRET must be at least 32 characters");
+  if (process.env.TURNSTILE_SECRET_KEY && !(process.env.PLAY_INTEGRITY_PROJECT_NUMBER && process.env.PLAY_INTEGRITY_SERVICE_ACCOUNT)) {
+    console.warn("kotes: Play Integrity isn't set up, so the Android app can't sign in (Turnstile is on).");
+  }
+  if (process.env.PLAY_INTEGRITY_ALLOW_TEST_BUILDS === "1") {
+    console.warn("kotes: SECURITY WARNING: PLAY_INTEGRITY_ALLOW_TEST_BUILDS is on. Turn it off in production.");
+  }
   try {
     const user = decodeURIComponent(new URL(process.env.DATABASE_URL!).username).split(".")[0];
     if (user !== "kotes_app") {

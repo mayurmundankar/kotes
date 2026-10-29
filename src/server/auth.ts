@@ -1,5 +1,5 @@
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { query, tx } from "./db";
 import { sendCodeEmail } from "./email";
@@ -107,8 +107,17 @@ export async function requestCode(email: string) {
   if (Math.random() < 0.05) query("select kotes.sweep()").catch(() => {});
 }
 
-/** Step two: trade a correct code for a session cookie. */
-export async function verifyCode(email: string, rawCode: unknown, userAgent: string | null): Promise<Reader> {
+/**
+ * Step two: trade a correct code for a session. Browsers get it as a cookie;
+ * the app (`app`) gets the token itself, keeps it in the device keystore and
+ * sends it back as `Authorization: Bearer`.
+ */
+export async function verifyCode(
+  email: string,
+  rawCode: unknown,
+  userAgent: string | null,
+  app = false,
+): Promise<{ reader: Reader; token?: string }> {
   const code = String(rawCode ?? "").replace(/\D/g, "");
   if (code.length !== CODE_LENGTH) throw new HttpError("That code doesn't look right.");
   if (await lockedOut(email)) {
@@ -159,8 +168,9 @@ export async function verifyCode(email: string, rawCode: unknown, userAgent: str
     secLog("verify_failed", { email: emailTag(email) });
     throw new HttpError(result.error!, 400);
   }
+  if (app) return result;
   await setCookie(result.token);
-  return result.reader;
+  return { reader: result.reader };
 }
 
 async function setCookie(token: string) {
@@ -175,13 +185,19 @@ async function setCookie(token: string) {
   });
 }
 
-/** The session token from the cookie, moving a pre-hardening cookie to the new name. */
-async function readToken() {
+/**
+ * The session token: the app's bearer token, else the cookie (moving a
+ * pre-hardening cookie to the new name). Browsers never send Authorization to
+ * kotes, so a bearer token always means the app.
+ */
+async function readToken(): Promise<{ token?: string; legacy: boolean; bearer: boolean }> {
+  const auth = (await headers()).get("authorization");
+  if (auth?.startsWith("Bearer ")) return { token: auth.slice(7).trim(), legacy: false, bearer: true };
   const jar = await cookies();
   const token = jar.get(COOKIE)?.value;
-  if (token || COOKIE === LEGACY_COOKIE) return { token, legacy: false };
+  if (token || COOKIE === LEGACY_COOKIE) return { token, legacy: false, bearer: false };
   const old = jar.get(LEGACY_COOKIE)?.value;
-  return { token: old, legacy: !!old };
+  return { token: old, legacy: !!old, bearer: false };
 }
 
 // Verified sessions, remembered briefly so most API calls skip a database round
@@ -191,7 +207,7 @@ const sessionCache = new Map<string, { reader: Reader; until: number }>();
 
 /** The signed-in reader, or null. Sessions slide forward once a day. */
 export async function getReader(): Promise<Reader | null> {
-  const { token, legacy } = await readToken();
+  const { token, legacy, bearer } = await readToken();
   if (!token || token.length > 100) return null;
   const hash = hashToken(token);
   const hit = sessionCache.get(hash);
@@ -220,7 +236,8 @@ export async function getReader(): Promise<Reader | null> {
        update kotes.readers set last_seen_at = now() where id in (select reader_id from s)`,
       [hash, SESSION_DAYS],
     );
-    await setCookie(token);
+    // The app's token slides on the server alone; there's no cookie to refresh.
+    if (!bearer) await setCookie(token);
   }
   const reader = { id: row.id, email: row.email };
   if (sessionCache.size > 5_000) sessionCache.clear();
