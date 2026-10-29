@@ -115,9 +115,11 @@ export const QuoteCard = memo(function QuoteCard({ quote, tone, height, bottomIn
       </View>
 
       <View pointerEvents="none" style={[s.tags, { bottom: NAV_H + bottomInset + 26 }]}>
-        <Text style={[s.num, { color: t.accent }]}>N° {String(quote.id).padStart(3, '0')}</Text>
+        <Text style={[s.num, { color: t.accent }]} maxFontSizeMultiplier={1.4} accessibilityLabel={`Quote ${quote.id}`}>
+          N° {String(quote.id).padStart(3, '0')}
+        </Text>
         {quote.tags.map((tag) => (
-          <Text key={tag} style={[s.tag, { color: t.soft }]}>
+          <Text key={tag} style={[s.tag, { color: t.soft }]} maxFontSizeMultiplier={1.4}>
             {themeLabel(tag)}
           </Text>
         ))}

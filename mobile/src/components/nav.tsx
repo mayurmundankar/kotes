@@ -65,7 +65,9 @@ export function Nav({ state, navigateToTab }: BottomTabBarProps) {
             }}
             style={[s.item, { opacity: on ? 1 : 0.42 }]}>
             <item.Icon color={t.ink} />
-            <Text style={[s.label, { color: t.ink }]}>{item.label}</Text>
+            <Text style={[s.label, { color: t.ink }]} maxFontSizeMultiplier={1.3}>
+              {item.label}
+            </Text>
             <View style={[s.dot, on && { backgroundColor: t.dot }]} />
           </Pressable>
         );

@@ -3,7 +3,15 @@ import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming, type SharedValue } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+  type SharedValue,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Arrow } from '@/components/icons';
@@ -36,10 +44,12 @@ export default function Welcome() {
   const display = Math.min(58, Math.max(44, width * 0.134));
 
   // One clock for the fan; each card floats on its own phase of it.
+  // Held still when the reader has turned animations off.
+  const reduceMotion = useReducedMotion();
   const clock = useSharedValue(0);
   useEffect(() => {
-    clock.value = withRepeat(withTiming(1, { duration: FLOAT_MS, easing: Easing.linear }), -1);
-  }, [clock]);
+    if (!reduceMotion) clock.set(withRepeat(withTiming(1, { duration: FLOAT_MS, easing: Easing.linear }), -1));
+  }, [clock, reduceMotion]);
 
   const begin = () => router.push('/login');
 

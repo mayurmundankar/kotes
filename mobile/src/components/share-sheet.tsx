@@ -137,7 +137,7 @@ function Sheet({ quoteId, initialTone, onClose }: { quoteId: number; initialTone
                 accessibilityRole="radio"
                 accessibilityState={{ checked: on }}
                 accessibilityLabel={t}
-                hitSlop={6}
+                hitSlop={9}
                 style={[s.swatch, { backgroundColor: PALETTE[t].bg }, on && s.swatchOn]}
               />
             );
@@ -147,10 +147,10 @@ function Sheet({ quoteId, initialTone, onClose }: { quoteId: number; initialTone
         <View style={s.actions}>
           <Button block label="Share to stories & chats" busy={busy} disabled={!image || busy} onPress={share} />
           <View style={s.row}>
-            <Pressable onPress={save} disabled={!image} accessibilityRole="button" style={!image && { opacity: 0.4 }}>
+            <Pressable onPress={save} disabled={!image} accessibilityRole="button" hitSlop={4} style={!image && { opacity: 0.4 }}>
               <Text style={s.link}>Save image</Text>
             </Pressable>
-            <Pressable onPress={onClose} accessibilityRole="button">
+            <Pressable onPress={onClose} accessibilityRole="button" hitSlop={4}>
               <Text style={s.link}>Close</Text>
             </Pressable>
           </View>

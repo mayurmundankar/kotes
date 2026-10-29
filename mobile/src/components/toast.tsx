@@ -1,6 +1,6 @@
 // One short message at a time, above the nav (the web's useToast).
 import { createContext, useCallback, useContext, useRef, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Platform, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -16,6 +16,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
 
   const toast = useCallback((text: string) => {
     clearTimeout(timer.current);
+    // TalkBack doesn't reliably read a live region on a view that just appeared.
+    AccessibilityInfo.announceForAccessibility(text);
     setMsg({ id: Date.now(), text });
     timer.current = setTimeout(() => setMsg(null), 1800);
   }, []);
@@ -30,7 +32,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             entering={Platform.OS === 'web' ? undefined : FadeInDown.duration(300)}
             exiting={Platform.OS === 'web' ? undefined : FadeOut.duration(300)}
             style={s.toast}>
-            <Text style={s.text} accessibilityLiveRegion="polite" accessibilityRole="alert">
+            <Text style={s.text} importantForAccessibility="no-hide-descendants">
               {msg.text}
             </Text>
           </Animated.View>

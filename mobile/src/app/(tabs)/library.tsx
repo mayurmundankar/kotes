@@ -155,6 +155,8 @@ function Act({
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={on === undefined ? undefined : { selected: on }}
+      // 40pt to the eye, 48 to the finger.
+      hitSlop={4}
       style={({ pressed }) => [s.act, pressed && { transform: [{ scale: 0.85 }] }]}>
       {children}
     </Pressable>

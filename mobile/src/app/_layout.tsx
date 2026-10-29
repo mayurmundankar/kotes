@@ -1,16 +1,37 @@
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ToastProvider } from '@/components/toast';
+import { Button, Eyebrow, Wordmark } from '@/components/ui';
+import { reportError } from '@/lib/backend';
+import { installCrashReporting } from '@/lib/crash';
 import { useSession } from '@/lib/session';
-import { C, FONT_FILES } from '@/theme';
+import { C, F, GUTTER, FONT_FILES } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
+installCrashReporting();
+
+/** A screen failed to draw: say so kindly, report it, and offer a way back. */
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    SplashScreen.hideAsync();
+    reportError('render', error);
+  }, [error]);
+  return (
+    <View style={s.error}>
+      <Wordmark />
+      <Eyebrow>Something went wrong</Eyebrow>
+      <Text style={s.errorText}>A page didn&apos;t open as it should. We&apos;ve been told about it.</Text>
+      <Button label="Try again" onPress={retry} />
+    </View>
+  );
+}
 
 /**
  * Sends people where they belong (the web's useGuard):
@@ -54,3 +75,8 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+const s = StyleSheet.create({
+  error: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 18, padding: GUTTER, backgroundColor: C.paper },
+  errorText: { fontFamily: F.readItalic, fontSize: 20, lineHeight: 27, color: C.ink60, textAlign: 'center', maxWidth: 300 },
+});

@@ -1,5 +1,6 @@
 // The reader's page (the web's /you): who's signed in, the themes the feed
 // leans on, sign-out and account deletion.
+import Constants from 'expo-constants';
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -121,6 +122,7 @@ export default function You() {
             Privacy
           </Text>
         </Text>
+        <Text style={[T.fine, s.version]}>kotes {Constants.expoConfig?.version}</Text>
       </Rise>
     </Page>
   );
@@ -161,4 +163,5 @@ const s = StyleSheet.create({
   delete: { fontFamily: F.ui, fontSize: 13, color: C.ink40 },
   armed: { fontFamily: F.uiSemi, color: C.roseDeep },
   underline: { textDecorationLine: 'underline' },
+  version: { marginTop: 10 },
 });

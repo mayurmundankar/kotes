@@ -4,7 +4,14 @@ import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions, type ListViewToken } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { setNavTone } from '@/components/nav';
@@ -218,14 +225,17 @@ export default function Feed() {
 }
 
 function SwipeHint({ top }: { top: number }) {
-  const k = useSharedValue(0);
+  const reduceMotion = useReducedMotion();
+  const k = useSharedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
-    k.value = withRepeat(withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }), -1, true);
-  }, [k]);
+    if (!reduceMotion) k.set(withRepeat(withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }), -1, true));
+  }, [k, reduceMotion]);
   const nudge = useAnimatedStyle(() => ({ opacity: 0.55 + 0.45 * k.value, transform: [{ translateY: -6 * k.value }] }));
   return (
     <Animated.View pointerEvents="none" style={[s.swipe, { top }, nudge]}>
-      <Text style={s.swipeText}>Swipe up · double-tap to like</Text>
+      <Text style={s.swipeText} maxFontSizeMultiplier={1.4} importantForAccessibility="no">
+        Swipe up · double-tap to like
+      </Text>
     </Animated.View>
   );
 }

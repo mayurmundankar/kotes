@@ -17,7 +17,14 @@ import {
   useWindowDimensions,
   type TextInputInstance,
 } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Back } from '@/components/icons';
@@ -114,7 +121,8 @@ export default function Login() {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.paper }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    // Android draws edge to edge, so the window no longer shrinks for the keyboard: pad instead.
+    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: C.paper }} behavior={Platform.OS === 'web' ? undefined : 'padding'}>
       <ScrollView
         contentContainerStyle={[s.page, { paddingTop: insets.top + 20, paddingBottom: insets.bottom + 40 }]}
         keyboardShouldPersistTaps="handled">
@@ -271,10 +279,12 @@ function CodeField({
 }
 
 function Caret() {
+  const reduceMotion = useReducedMotion();
   const on = useSharedValue(1);
   useEffect(() => {
+    if (reduceMotion) return;
     on.value = withRepeat(withSequence(withTiming(1, { duration: 550 }), withTiming(0, { duration: 0 }), withTiming(0, { duration: 550 }), withTiming(1, { duration: 0 })), -1);
-  }, [on]);
+  }, [on, reduceMotion]);
   const blink = useAnimatedStyle(() => ({ opacity: on.value }));
   return <Animated.View style={[s.caret, blink]} />;
 }
