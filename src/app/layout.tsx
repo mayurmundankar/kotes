@@ -1,6 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import Script from "next/script";
 import "./globals.css";
+
+// Google Analytics (GA4) for the website only; the Android app doesn't load it.
+// Production only, so local development doesn't count as visits.
+const GA_ID = "G-QCK21V7P0J";
+const analytics = process.env.NODE_ENV === "production";
 
 // Self-hosted static fonts, built by scripts/build-fonts.py. Static files because
 // variable fonts rendered at their thinnest weight in WebKit (iPhone); these faces
@@ -67,6 +73,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${dmSerif.variable} ${garamond.variable} ${manrope.variable}`}>
       <body>
         <div className="app">{children}</div>
+        {analytics && (
+          <>
+            <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${GA_ID}');`}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );

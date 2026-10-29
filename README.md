@@ -6,6 +6,7 @@ The feed that reads you back. An endless, mobile-only quote feed for readers. Yo
 - **Auth:** kotes' own passwordless email codes. Supabase Auth is not used.
 - **Fonts:** DM Serif Display (display), EB Garamond (quotes), Manrope (interface), self-hosted as static files (see [Fonts](#fonts))
 - **Palette:** one red-pink hue in four depths: paper, blush, rose, wine
+- **Analytics:** Google Analytics 4 (`G-QCK21V7P0J`) on the website, in production only ([`src/app/layout.tsx`](src/app/layout.tsx)). The Android app has none.
 
 ## Run it
 
@@ -91,7 +92,7 @@ Layered so that no single failure exposes readers. Every item below was tested a
 - Session cookie `__Host-kotes_session`: `Secure`, `HttpOnly`, `SameSite=Strict`, and no other `*.mayurmundankar.com` site can set or overwrite it. 256-bit random token, stored only as SHA-256.
 - CSRF is blocked three ways: `Sec-Fetch-Site`/`Origin` must be same-origin, bodies must be JSON, and the cookie is Strict.
 - Request bodies are capped at 16 KB; every API route has a per-IP ceiling.
-- Headers: strict CSP (self + Turnstile only, no framing), HSTS (2 years), COOP, CORP, `nosniff`, no referrer leakage, browser features off.
+- Headers: strict CSP (self, Turnstile and Google Analytics only, no framing), HSTS (2 years), COOP, CORP, `nosniff`, no referrer leakage, browser features off.
 
 **Database**
 - The app connects as **`kotes_app`** ([`supabase/app-role.sql`](supabase/app-role.sql)): only the `kotes` schema, only the operations kotes performs (quotes are read-only), no DDL, no access to Supabase's auth, storage or Vault, and a **5 s statement timeout**. The server warns at startup if it's given any other login.

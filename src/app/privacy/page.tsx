@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 // Where readers can write about their data. Left empty, the page points them
 // to in-app deletion only.
 const CONTACT_EMAIL = "privacy.kotes@mayurmundankar.com";
-const UPDATED = "29 October 2026";
+const UPDATED = "30 October 2026";
 
 export default function Privacy() {
   return (
@@ -34,7 +34,7 @@ export default function Privacy() {
       <section className={s.short}>
         <p>kotes is a quiet place to read. We keep only what it takes to sign you in and to choose what you read next.</p>
         <ul>
-          <li>No passwords, no ads, no trackers, no analytics.</li>
+          <li>No passwords, no ads. The website counts visits with Google Analytics; the app counts nothing.</li>
           <li>We never sell or share your data for marketing.</li>
           <li>We don&apos;t have bandwidth to send you promotional emails. Only sign-in codes.</li>
           <li>Delete your account any time, and everything goes with it.</li>
@@ -88,9 +88,16 @@ export default function Privacy() {
             people from bots. Turnstile looks at signals from your browser and device; it doesn&apos;t use cookies to
             track you across sites.
           </dd>
-          <dt>Google</dt>
+          <dt>Google Analytics</dt>
           <dd>
-            Distributes the Android app through Google Play. When you sign in on the app, Google Play Integrity
+            On the website only, counts visits: which pages are opened, how people arrive, and broad facts such as
+            device type, browser and country (worked out from your IP address). It sees page addresses like{" "}
+            <em>/feed</em>, never your email, the quotes you read or what you like and keep. We use it only to
+            understand how the website is used, not for advertising. The Android app doesn&apos;t use it.
+          </dd>
+          <dt>Google Play</dt>
+          <dd>
+            Distributes the Android app. When you sign in on the app, Google Play Integrity
             confirms the request comes from the genuine kotes app on a real device, in place of Turnstile. Google
             looks at signals about the app and the device; kotes receives only the verdict.
           </dd>
@@ -101,13 +108,20 @@ export default function Privacy() {
       <section className={s.block}>
         <h2>Cookies and storage</h2>
         <p>
-          One cookie, <code>kotes_session</code>, keeps you signed in. It&apos;s essential, can&apos;t be read by
-          scripts, and isn&apos;t used for anything else. Your browser also remembers that you&apos;re signed in so
-          pages open faster. No advertising or tracking cookies, ever.
+          kotes sets one cookie, <code>kotes_session</code>, which keeps you signed in. It&apos;s essential,
+          can&apos;t be read by scripts, and isn&apos;t used for anything else. Your browser also remembers that
+          you&apos;re signed in so pages open faster. On the website, Google Analytics sets its own cookies
+          (<code>_ga</code> and <code>_ga_…</code>) to tell visits apart. No advertising cookies, ever. To keep
+          Analytics out, block third-party scripts or cookies in your browser, or use Google&apos;s{" "}
+          <a href="https://tools.google.com/dlpage/gaoptout" rel="noopener noreferrer">
+            opt-out add-on
+          </a>
+          ; kotes works the same without it.
         </p>
         <p>
-          The Android app uses no cookies: its session key is kept in your phone&apos;s secure keystore, and it
-          remembers that you&apos;re signed in so it opens faster. Uninstalling the app removes both.
+          The Android app uses no cookies and no analytics: its session key is kept in your phone&apos;s secure
+          keystore, and it remembers that you&apos;re signed in so it opens faster. Uninstalling the app removes
+          both.
         </p>
       </section>
 

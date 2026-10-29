@@ -8,6 +8,12 @@
       "port": 3001
     },
     {
+      "name": "kotes-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start", "--", "-p", "3002"],
+      "port": 3002
+    },
+    {
       "name": "kotes-app-web",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "mobile", "run", "web", "--", "--port", "8081"],

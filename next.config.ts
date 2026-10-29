@@ -2,18 +2,24 @@ import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
 const TURNSTILE = "https://challenges.cloudflare.com";
+// Google Analytics (GA4): the tag loads from Tag Manager and reports to
+// Analytics. Google's documented hosts for GA4 under a CSP.
+const GA_SCRIPT = "https://*.googletagmanager.com";
+const GA_CONNECT = "https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com";
+const GA_IMG = "https://*.google-analytics.com https://*.googletagmanager.com";
 
 // Next's inline bootstrap scripts need 'unsafe-inline' (pages are prerendered,
 // so per-request nonces aren't possible). The rest is locked to this origin,
-// plus Cloudflare's human check. React escapes all output and nothing renders
-// raw HTML, so there is no injection point for inline script to exploit.
+// plus Cloudflare's human check and Google Analytics. React escapes all output
+// and nothing renders raw HTML, so there is no injection point for inline
+// script to exploit.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${TURNSTILE}`,
+  `script-src 'self' 'unsafe-inline' ${TURNSTILE} ${GA_SCRIPT}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
+  `img-src 'self' data: blob: ${GA_IMG}`,
   "font-src 'self'",
-  `connect-src 'self' ${TURNSTILE}`,
+  `connect-src 'self' ${TURNSTILE} ${GA_CONNECT}`,
   `frame-src ${TURNSTILE}`,
   "worker-src 'self' blob:",
   "object-src 'none'",
