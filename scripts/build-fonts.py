@@ -10,10 +10,12 @@ Usage (pip install fonttools brotli):
      ofl/ebgaramond/EBGaramond[wght].ttf, EBGaramond-Italic[wght].ttf
      ofl/manrope/Manrope[wght].ttf
      (prefix each with its folder name, e.g. "manrope-Manrope[wght].ttf")
-  2. python scripts/build-fonts.py <that folder> src/fonts
+  2. python scripts/build-fonts.py <that folder> src/fonts mobile/assets/fonts
 
 Also writes src/fonts/og/*.ttf: TrueType copies of the faces the server uses to
-draw share images (Next's image renderer reads TTF/OTF/WOFF, not WOFF2).
+draw share images (Next's image renderer reads TTF/OTF/WOFF, not WOFF2), and,
+given a third folder, TTF copies of every web face for the Android app (Android
+can't load WOFF2). Each app file is its own family, named after the file.
 """
 import sys
 from pathlib import Path
@@ -22,6 +24,7 @@ from fontTools.varLib import instancer
 from fontTools import subset
 
 src, out = Path(sys.argv[1]), Path(sys.argv[2])
+app = Path(sys.argv[3]) if len(sys.argv) > 3 else None
 LATIN = ("U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,"
          "U+2000-206F,U+20AC,U+2122,U+2190-2193,U+2212,U+2215,U+FEFF,U+FFFD")
 
@@ -82,3 +85,9 @@ for file, family, style, weights in JOBS:
         static.flavor = "woff2"
         static.save(dest)
         print("  ", dest.name, dest.stat().st_size // 1024, "KB")
+        if app:
+            app.mkdir(parents=True, exist_ok=True)
+            static.flavor = None
+            ttf = app / dest.with_suffix(".ttf").name
+            static.save(ttf)
+            print("  ", f"app/{ttf.name}", ttf.stat().st_size // 1024, "KB")

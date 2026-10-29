@@ -4,7 +4,8 @@ import { limitIp } from "@/server/ratelimit";
 
 export const POST = handle(async (req) => {
   await limitIp("verify", 30, 10 * 60_000, "Too many tries. Wait a few minutes.");
-  const { email, code } = await readJson<{ email: string; code: string }>(req);
-  const reader = await verifyCode(normalizeEmail(email), code, req.headers.get("user-agent"));
-  return Response.json({ reader, onboarded: await isOnboarded(reader.id) });
+  const { email, code, platform } = await readJson<{ email: string; code: string; platform: string }>(req);
+  // The app has no cookie jar: it gets the session token in the body instead.
+  const { reader, token } = await verifyCode(normalizeEmail(email), code, req.headers.get("user-agent"), platform === "android");
+  return Response.json({ reader, onboarded: await isOnboarded(reader.id), ...(token && { token }) });
 });

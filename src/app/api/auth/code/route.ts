@@ -1,10 +1,11 @@
 import { normalizeEmail, requestCode } from "@/server/auth";
 import { verifyHuman } from "@/server/human";
+import { appCheckEnabled, verifyApp } from "@/server/integrity";
 import { handle, readJson } from "@/server/http";
 import { limitIp } from "@/server/ratelimit";
 import { secLog } from "@/server/seclog";
 
-type Body = { email: string; turnstile: string; website: string; automated: boolean };
+type Body = { email: string; turnstile: string; website: string; automated: boolean; platform: string; integrity: string };
 
 export const POST = handle(async (req) => {
   const ip = await limitIp("code", 20, 60 * 60_000, "Too many codes from this network. Try again later.");
@@ -19,7 +20,11 @@ export const POST = handle(async (req) => {
   }
 
   const email = normalizeEmail(body.email);
-  await verifyHuman(body.turnstile, ip);
+  // The Android app proves itself with Play Integrity. Until that's set up,
+  // claiming to be the app gets the Turnstile check like anyone else, so it
+  // can't be used to skip it.
+  if (body.platform === "android" && appCheckEnabled()) await verifyApp(body.integrity, email, ip);
+  else await verifyHuman(body.turnstile, ip);
   await requestCode(email);
   return Response.json({ ok: true });
 });
