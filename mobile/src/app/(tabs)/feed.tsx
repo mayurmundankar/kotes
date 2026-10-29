@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { setNavTone } from '@/components/nav';
 import { QuoteCard, TONE, TONES, type Tone } from '@/components/quote-card';
+import { ShareSheet } from '@/components/share-sheet';
 import { useToast } from '@/components/toast';
 import { Eyebrow, Spinner, Wordmark } from '@/components/ui';
 import { backend, type Kind, type Quote } from '@/lib/backend';
@@ -136,8 +137,9 @@ export default function Feed() {
     [toast],
   );
 
-  // Phase 4 opens the share sheet here.
-  const onShare = useCallback((_q: Quote, _tone: Tone) => toast('Sharing is coming soon.'), [toast]);
+  // The sheet opens in the colour of the card it came from.
+  const [sharing, setSharing] = useState<{ quote: Quote; tone: Tone } | null>(null);
+  const onShare = useCallback((quote: Quote, tone: Tone) => setSharing({ quote, tone }), []);
 
   const dark = tone === 'wine' || tone === 'rose';
   const ink = TONE[tone].ink;
@@ -209,6 +211,8 @@ export default function Feed() {
       )}
 
       {items.length > 0 && active === 0 && <SwipeHint top={insets.top + 70} />}
+
+      <ShareSheet quote={sharing?.quote ?? null} tone={sharing?.tone} onClose={() => setSharing(null)} />
     </View>
   );
 }

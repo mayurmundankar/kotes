@@ -40,7 +40,8 @@ async function saveToken(next: string | null) {
 const listeners = new Set<(s: Session | null) => void>();
 const emit = (s: Session | null) => listeners.forEach((cb) => cb(s));
 
-async function api<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+/** One API request; anything but a 2xx becomes an ApiError with the server's message. */
+async function send(path: string, init?: { method?: string; body?: unknown }): Promise<Response> {
   const auth = await readToken();
   const headers: Record<string, string> = {};
   if (init?.body !== undefined) headers['Content-Type'] = 'application/json';
@@ -58,20 +59,23 @@ async function api<T>(path: string, init?: { method?: string; body?: unknown }):
   } catch {
     throw new ApiError("Couldn't reach kotes. Check your connection and try again.", 0);
   }
+  if (res.ok) return res;
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    // The session ended elsewhere (signed out, expired, deleted): back to sign in.
-    if (res.status === 401 && auth) {
-      await saveToken(null);
-      emit(null);
-    }
-    // No JSON error means kotes itself didn't answer: Cloudflare's own error
-    // page while the server restarts or is unreachable.
-    const fallback =
-      res.status >= 500 ? 'kotes is taking a breath. Try again in a moment.' : 'Something went wrong. Try again.';
-    throw new ApiError(data.error ?? fallback, res.status, data.retryAfter);
+  // The session ended elsewhere (signed out, expired, deleted): back to sign in.
+  if (res.status === 401 && auth) {
+    await saveToken(null);
+    emit(null);
   }
-  return data as T;
+  // No JSON error means kotes itself didn't answer: Cloudflare's own error
+  // page while the server restarts or is unreachable.
+  const fallback =
+    res.status >= 500 ? 'kotes is taking a breath. Try again in a moment.' : 'Something went wrong. Try again.';
+  throw new ApiError(data.error ?? fallback, res.status, data.retryAfter);
+}
+
+async function api<T>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
+  const res = await send(path, init);
+  return (await res.json().catch(() => ({}))) as T;
 }
 
 // Views are sent in batches: every few seconds, every 8, or when the app goes
@@ -182,11 +186,9 @@ export const backend = {
   async setTastes(themes: string[]) {
     await api('taste', { method: 'PUT', body: { themes } });
   },
-  /** Where the share image is drawn, and the header that unlocks it (Phase 4). */
-  async shareImageRequest(quoteId: number, tone: string) {
-    return {
-      uri: `${BASE}/api/share/${quoteId}?tone=${encodeURIComponent(tone)}`,
-      headers: { Authorization: `Bearer ${await readToken()}` } as Record<string, string>,
-    };
+  /** The 1080×1920 story image, drawn by the server in the given tone (PNG bytes). */
+  async getShareImage(quoteId: number, tone: string) {
+    const res = await send(`share/${quoteId}?tone=${encodeURIComponent(tone)}`);
+    return res.arrayBuffer();
   },
 };

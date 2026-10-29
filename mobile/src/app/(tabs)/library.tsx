@@ -6,6 +6,7 @@ import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Bookmark, Heart, Share } from '@/components/icons';
 import { TopBar, usePagePadding } from '@/components/page';
+import { ShareSheet } from '@/components/share-sheet';
 import { useToast } from '@/components/toast';
 import { Button, Rise, Spinner } from '@/components/ui';
 import { backend, type Kind, type Quote } from '@/lib/backend';
@@ -19,6 +20,7 @@ export default function Library() {
   const toast = useToast();
   const [tab, setTab] = useState<Kind>('save');
   const [lists, setLists] = useState<Lists>({ save: null, like: null });
+  const [sharing, setSharing] = useState<Quote | null>(null);
 
   // Fresh every time the tab opens: the feed may have kept or liked since.
   useFocusEffect(
@@ -85,56 +87,68 @@ export default function Library() {
   );
 
   return (
-    <FlatList
-      style={{ backgroundColor: C.paper }}
-      contentContainerStyle={[{ flexGrow: 1 }, padding]}
-      data={list ?? []}
-      keyExtractor={(q) => String(q.id)}
-      ListHeaderComponent={header}
-      ListEmptyComponent={
-        list === null ? (
-          <View style={s.loading}>
-            <Spinner />
-          </View>
-        ) : (
-          <View style={s.empty}>
-            <Text style={s.emptyText}>
-              {tab === 'save'
-                ? 'Nothing kept yet. Tap the bookmark on any line that stays with you.'
-                : 'No likes yet. Double-tap a quote you love.'}
-            </Text>
-            <Button label="Go reading" onPress={() => router.navigate('/feed')} />
-          </View>
-        )
-      }
-      renderItem={({ item: q, index }) => (
-        <Rise delay={(Math.min(index, 6) * 25) / 40} style={s.item}>
-          <Text style={s.quote}>
-            <Text style={s.quoteMark}>“</Text>
-            {q.text}
-          </Text>
-          <View style={s.row}>
-            <Text style={s.tags}>{q.tags.map(themeLabel).join(' · ')}</Text>
-            <View style={s.acts}>
-              <Act on={q.liked} label={q.liked ? 'Unlike' : 'Like'} onPress={() => toggle(q, 'like')}>
-                <Heart size={21} filled={q.liked} color={q.liked ? C.rose : C.ink60} />
-              </Act>
-              <Act on={q.saved} label={q.saved ? 'Remove from kept' : 'Keep'} onPress={() => toggle(q, 'save')}>
-                <Bookmark size={21} filled={q.saved} color={q.saved ? C.rose : C.ink60} />
-              </Act>
-              {/* Phase 4 opens the share sheet here. */}
-              <Act label="Share" onPress={() => toast('Sharing is coming soon.')}>
-                <Share size={21} color={C.ink60} />
-              </Act>
+    <>
+      <FlatList
+        style={{ backgroundColor: C.paper }}
+        contentContainerStyle={[{ flexGrow: 1 }, padding]}
+        data={list ?? []}
+        keyExtractor={(q) => String(q.id)}
+        ListHeaderComponent={header}
+        ListEmptyComponent={
+          list === null ? (
+            <View style={s.loading}>
+              <Spinner />
             </View>
-          </View>
-        </Rise>
-      )}
-    />
+          ) : (
+            <View style={s.empty}>
+              <Text style={s.emptyText}>
+                {tab === 'save'
+                  ? 'Nothing kept yet. Tap the bookmark on any line that stays with you.'
+                  : 'No likes yet. Double-tap a quote you love.'}
+              </Text>
+              <Button label="Go reading" onPress={() => router.navigate('/feed')} />
+            </View>
+          )
+        }
+        renderItem={({ item: q, index }) => (
+          <Rise delay={(Math.min(index, 6) * 25) / 40} style={s.item}>
+            <Text style={s.quote}>
+              <Text style={s.quoteMark}>“</Text>
+              {q.text}
+            </Text>
+            <View style={s.row}>
+              <Text style={s.tags}>{q.tags.map(themeLabel).join(' · ')}</Text>
+              <View style={s.acts}>
+                <Act on={q.liked} label={q.liked ? 'Unlike' : 'Like'} onPress={() => toggle(q, 'like')}>
+                  <Heart size={21} filled={q.liked} color={q.liked ? C.rose : C.ink60} />
+                </Act>
+                <Act on={q.saved} label={q.saved ? 'Remove from kept' : 'Keep'} onPress={() => toggle(q, 'save')}>
+                  <Bookmark size={21} filled={q.saved} color={q.saved ? C.rose : C.ink60} />
+                </Act>
+                <Act label="Share" onPress={() => setSharing(q)}>
+                  <Share size={21} color={C.ink60} />
+                </Act>
+              </View>
+            </View>
+          </Rise>
+        )}
+      />
+      <ShareSheet quote={sharing} onClose={() => setSharing(null)} />
+    </>
   );
 }
 
-function Act({ on, label, onPress, children }: { on?: boolean; label: string; onPress: () => void; children: React.ReactNode }) {
+function Act({
+  on,
+  label,
+  onPress,
+  children,
+}: {
+  on?: boolean;
+  label: string;
+  onPress: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <Pressable
       onPress={onPress}
