@@ -57,7 +57,14 @@ export default function Privacy() {
           <dt>Sign-in records</dt>
           <dd>
             For each signed-in device, a scrambled version of its session key, when it was last used, and the
-            browser&apos;s name (so a session can be recognised). Sign-in codes are stored only in scrambled form.
+            browser&apos;s or app&apos;s name (so a session can be recognised). Sign-in codes are stored only in
+            scrambled form.
+          </dd>
+          <dt>Error reports</dt>
+          <dd>
+            When something breaks unexpectedly, the website or app sends us the error message, where it happened and
+            the browser or app version, so we can fix it. They go into the same security log and aren&apos;t linked
+            to your account.
           </dd>
           <dt>Your IP address</dt>
           <dd>
@@ -81,6 +88,12 @@ export default function Privacy() {
             people from bots. Turnstile looks at signals from your browser and device; it doesn&apos;t use cookies to
             track you across sites.
           </dd>
+          <dt>Google</dt>
+          <dd>
+            Distributes the Android app through Google Play. When you sign in on the app, Google Play Integrity
+            confirms the request comes from the genuine kotes app on a real device, in place of Turnstile. Google
+            looks at signals about the app and the device; kotes receives only the verdict.
+          </dd>
         </dl>
         <p>Each processes data only to provide its service to us.</p>
       </section>
@@ -91,6 +104,10 @@ export default function Privacy() {
           One cookie, <code>kotes_session</code>, keeps you signed in. It&apos;s essential, can&apos;t be read by
           scripts, and isn&apos;t used for anything else. Your browser also remembers that you&apos;re signed in so
           pages open faster. No advertising or tracking cookies, ever.
+        </p>
+        <p>
+          The Android app uses no cookies: its session key is kept in your phone&apos;s secure keystore, and it
+          remembers that you&apos;re signed in so it opens faster. Uninstalling the app removes both.
         </p>
       </section>
 
@@ -106,15 +123,19 @@ export default function Privacy() {
         </dl>
       </section>
 
-      <section className={s.block}>
-        <h2>Your choices</h2>
+      <section className={s.block} id="delete">
+        <h2>Deleting your account</h2>
         <p>
-          Open <em>You</em> and tap <em>Delete my account</em>. It permanently erases your email, sessions, taste,
-          likes, kept quotes and reading history, right away. Signing out ends the session on that device.
+          In the app or on this website, open <em>You</em> and tap <em>Delete my account</em> (twice, to be sure). It
+          permanently erases your email, sessions, taste, likes, kept quotes and reading history, right away, on
+          every device. No app? Sign in at <Link href="/login">kotes.mayurmundankar.com</Link> and do the same.
+          Signing out only ends the session on that device.
         </p>
         {CONTACT_EMAIL ? (
           <p>
-            For anything else about your data, write to <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+            Can&apos;t sign in, or want us to delete it for you? Write to{" "}
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> from the address you signed up with, and we&apos;ll
+            erase it within 30 days. The same address takes any other question about your data.
           </p>
         ) : null}
       </section>

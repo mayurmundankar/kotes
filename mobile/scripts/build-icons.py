@@ -11,7 +11,8 @@ Writes assets/images/:
   android-icon-monochrome.png  1024², the mark in white (Android 13+ themed icons)
   splash-icon.png              1024², transparent; the mark, shown on paper at launch
   favicon.png                  the website's favicon (web preview only)
-and store/icon-512.png, the Google Play listing icon.
+and store/icon-512.png (the Google Play listing icon) and store/feature-graphic.png
+(1024×500, cut from the website's link preview, public/og.png).
 """
 import shutil
 from pathlib import Path
@@ -55,3 +56,10 @@ save(mark(1024, 0.5, ROSE), OUT / "splash-icon.png")
 save(mark(512, 0.46, ROSE, PAPER).convert("RGB"), ROOT / "store/icon-512.png")
 shutil.copyfile(ROOT.parent / "public/favicon.png", OUT / "favicon.png")
 print("  ", "assets/images/favicon.png (copied from the website)")
+
+# Play's feature graphic is 1024×500; og.png is 1200×630, so trim it to that
+# shape (evenly top and bottom, where it's only paper) and scale.
+og = Image.open(ROOT.parent / "public/og.png").convert("RGB")
+h = round(og.width * 500 / 1024)
+top = (og.height - h) // 2
+save(og.crop((0, top, og.width, top + h)).resize((1024, 500), Image.LANCZOS), ROOT / "store/feature-graphic.png")

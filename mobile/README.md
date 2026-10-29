@@ -28,7 +28,7 @@ The app uses native modules (Play Integrity, the keystore, haptics), so **Expo G
 | `preview` | Installable APK, for trying a release build | `npx eas-cli@latest build -p android --profile preview` |
 | `production` | Signed `.aab` for Google Play, version code bumped automatically | `npx eas-cli@latest build -p android --profile production` |
 
-`npx eas-cli@latest submit -p android` uploads the latest production build to Play's internal testing track.
+Getting it onto Google Play, from the first upload to production, is in [`RELEASE.md`](RELEASE.md). The store listing and Play Console answers are in [`store/listing.md`](store/listing.md).
 
 To point a build at another server, set `EXPO_PUBLIC_API_URL` in [`eas.json`](eas.json), or in `.env.local` for `expo start`.
 

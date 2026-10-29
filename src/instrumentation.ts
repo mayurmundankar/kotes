@@ -9,6 +9,12 @@ export async function register() {
   if (process.env.TURNSTILE_SECRET_KEY && !(process.env.PLAY_INTEGRITY_PROJECT_NUMBER && process.env.PLAY_INTEGRITY_SERVICE_ACCOUNT)) {
     console.warn("kotes: Play Integrity isn't set up, so the Android app can't sign in (Turnstile is on).");
   }
+  if (process.env.REVIEW_EMAIL || process.env.REVIEW_CODE) {
+    if (!process.env.REVIEW_EMAIL || !/^\d{6}$/.test(process.env.REVIEW_CODE ?? "")) {
+      throw new Error("kotes: REVIEW_EMAIL and REVIEW_CODE (6 digits) go together");
+    }
+    console.warn("kotes: the store review account is on (REVIEW_EMAIL). It signs in with a fixed code and gets no email.");
+  }
   if (process.env.PLAY_INTEGRITY_ALLOW_TEST_BUILDS === "1") {
     console.warn("kotes: SECURITY WARNING: PLAY_INTEGRITY_ALLOW_TEST_BUILDS is on. Turn it off in production.");
   }

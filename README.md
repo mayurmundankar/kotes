@@ -61,6 +61,8 @@ docker compose up -d --build
 
 To set up Play Integrity: Play Console → *App integrity* → link a Google Cloud project. In that project, enable the **Play Integrity API** and create a service account key. Put the project number and the key in `PLAY_INTEGRITY_PROJECT_NUMBER` and `PLAY_INTEGRITY_SERVICE_ACCOUNT` (see `.env.example`). Development builds aren't installed from Play, so a development server can set `PLAY_INTEGRITY_ALLOW_TEST_BUILDS=1`. Never set it in production; the server warns at startup if it's on.
 
+**Store review:** Google's reviewers can't receive kotes' emails, so `REVIEW_EMAIL` + `REVIEW_CODE` (6 digits) set up one account that signs in with that fixed code and gets no email. Every limit and lockout still applies. Releasing the app step by step: [`mobile/RELEASE.md`](mobile/RELEASE.md).
+
 POST routes only accept JSON. Combined with `SameSite=Lax`, that blocks cross-site form attacks.
 
 **Limits:** see [Security](#security).

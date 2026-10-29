@@ -43,6 +43,19 @@ export function normalizeEmail(raw: unknown) {
   return email;
 }
 
+/**
+ * Store review (Google Play): reviewers can't receive kotes' emails, so one
+ * configured account signs in with a fixed code instead, and no email is sent.
+ * Off unless both are set. Every limit and lockout still applies, and the
+ * account holds nothing but the reviewer's own reading.
+ */
+export function reviewAccount() {
+  const email = process.env.REVIEW_EMAIL?.trim().toLowerCase();
+  const code = process.env.REVIEW_CODE?.trim();
+  if (!email || !code || !new RegExp(`^\\d{${CODE_LENGTH}}$`).test(code)) return null;
+  return { email, code };
+}
+
 /** True when this email has had too many wrong guesses today. */
 async function lockedOut(email: string) {
   const [{ failures }] = await query<{ failures: number }>(
@@ -88,7 +101,9 @@ export async function requestCode(email: string) {
     throw new HttpError("kotes is very busy right now. Try again shortly.", 503);
   }
 
-  const code = String(randomInt(0, 10 ** CODE_LENGTH)).padStart(CODE_LENGTH, "0");
+  const review = reviewAccount();
+  const isReview = review?.email === email;
+  const code = isReview ? review.code : String(randomInt(0, 10 ** CODE_LENGTH)).padStart(CODE_LENGTH, "0");
   await query("update kotes.login_codes set used_at = now() where email = $1 and used_at is null", [email]);
   const [row] = await query<{ id: string }>(
     `insert into kotes.login_codes (email, code_hash, expires_at)
@@ -96,6 +111,10 @@ export async function requestCode(email: string) {
     [email, hashCode(email, code).toString("hex"), CODE_TTL_MIN],
   );
 
+  if (isReview) {
+    secLog("review_code", { email: emailTag(email) });
+    return;
+  }
   try {
     await sendCodeEmail(email, code);
   } catch (e) {
