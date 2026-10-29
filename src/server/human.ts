@@ -6,6 +6,7 @@ import { secLog } from "./seclog";
 // or AI agent. Switched on by setting both keys (Cloudflare → Turnstile).
 export const turnstileSiteKey = () => process.env.TURNSTILE_SITE_KEY ?? "";
 const secret = () => process.env.TURNSTILE_SECRET_KEY ?? "";
+export const turnstileEnabled = () => !!secret();
 
 export async function verifyHuman(token: unknown, ip: string) {
   if (!secret()) return; // not configured (local development)

@@ -59,7 +59,7 @@ docker compose up -d --build
 - `auth/verify` returns the session `token` in the body and sets no cookie. The app keeps it in the Android Keystore and sends `Authorization: Bearer <token>` on every call. It's the same session as a cookie: hashed in the database, 90 days, sliding, ended by sign-out or account deletion.
 - `GET /api/auth/config` tells the app the package name and Cloud project number it needs to ask Google for a token.
 
-To set up Play Integrity: Play Console → *App integrity* → link a Google Cloud project. In that project, enable the **Play Integrity API** and create a service account key. Put the project number and the key in `PLAY_INTEGRITY_PROJECT_NUMBER` and `PLAY_INTEGRITY_SERVICE_ACCOUNT` (see `.env.example`). Development builds aren't installed from Play, so a development server can set `PLAY_INTEGRITY_ALLOW_TEST_BUILDS=1`. Never set it in production; the server warns at startup if it's on.
+To set up Play Integrity: Play Console → *Protected with Play* → *Play Integrity API* → link a Google Cloud project. In that project, create a service account key. Put the project number and the key in `PLAY_INTEGRITY_PROJECT_NUMBER` and `PLAY_INTEGRITY_SERVICE_ACCOUNT` (see `.env.example`). Development builds aren't installed from Play, so a development server can set `PLAY_INTEGRITY_ALLOW_TEST_BUILDS=1`. Never set it in production; the server warns at startup if it's on.
 
 **Store review:** Google's reviewers can't receive kotes' emails, so `REVIEW_EMAIL` + `REVIEW_CODE` (6 digits) set up one account that signs in with that fixed code and gets no email. Every limit and lockout still applies. Releasing the app step by step: [`mobile/RELEASE.md`](mobile/RELEASE.md).
 

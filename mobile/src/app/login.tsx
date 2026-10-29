@@ -30,6 +30,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Back } from '@/components/icons';
 import { Button, Eyebrow, Rise, Spinner, Wordmark } from '@/components/ui';
 import { ApiError, backend, OTP_LENGTH, reportError } from '@/lib/backend';
+import { APP_SIGNIN_OFF } from '@shared/integrity';
 import { C, F, GUTTER, SITE, T } from '@/theme';
 
 const RESEND_AFTER = 60;
@@ -84,8 +85,10 @@ export default function Login() {
     } catch (err) {
       setError((err as Error).message);
       if (err instanceof ApiError && err.retryAfter) setWait(err.retryAfter);
-      // Expected refusals (limits, bad email) carry a 4xx; anything else is a bug worth seeing.
-      if (!(err instanceof ApiError) || err.status >= 500) reportError('signup-code', err);
+      // Expected refusals (limits, bad email, app sign-in not set up) aren't
+      // bugs; anything else is worth seeing.
+      const expected = err instanceof ApiError && (err.status < 500 || err.message === APP_SIGNIN_OFF);
+      if (!expected) reportError('signup-code', err);
     } finally {
       setBusy(false);
     }

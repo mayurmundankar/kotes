@@ -4,6 +4,7 @@
 import Constants from 'expo-constants';
 import { AppState, Platform } from 'react-native';
 
+import { APP_SIGNIN_OFF } from '@shared/integrity';
 import type { Kind, Quote, Session, Taste, User } from '@shared/types';
 import { appCheckToken, prepareAppCheck, type AppCheck } from './integrity';
 import { storage } from './storage';
@@ -102,13 +103,22 @@ export function reportError(where: string, err: unknown) {
   api('client-error', { body: { where, message } }).catch(() => {});
 }
 
-// Public sign-in settings, fetched once (and again after a failure).
-let config: Promise<{ android: AppCheck | null }> | null = null;
+// Public sign-in settings. Kept once the server can verify the app; fetched
+// again otherwise (after a failure, or while Play Integrity isn't set up), so
+// switching it on on the server needs no app restart.
+type Config = { turnstileSiteKey: string | null; android: AppCheck | null };
+let config: Promise<Config> | null = null;
 function getConfig() {
-  config ??= api<{ android: AppCheck | null }>('auth/config').catch((e) => {
-    config = null;
-    throw e;
-  });
+  config ??= api<Config>('auth/config').then(
+    (c) => {
+      if (!c.android) config = null;
+      return c;
+    },
+    (e) => {
+      config = null;
+      throw e;
+    },
+  );
   return config;
 }
 
@@ -119,7 +129,9 @@ export const backend = {
     if (android) await prepareAppCheck(android);
   },
   async sendCode(email: string) {
-    const { android } = await getConfig();
+    const { android, turnstileSiteKey } = await getConfig();
+    // The server would refuse anyway: don't spend one of the network's tries on it.
+    if (Platform.OS !== 'web' && !android && turnstileSiteKey) throw new ApiError(APP_SIGNIN_OFF, 503);
     let integrity: string | undefined;
     try {
       integrity = await appCheckToken(android, email);

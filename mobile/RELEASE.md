@@ -33,8 +33,8 @@ Plan for about three weeks from step 1 to readers.
 
 Until this is done the app can't sign anyone in, because the server falls back to Turnstile, which the app can't pass.
 
-1. Go to Play Console → **Test and release → App integrity → Play Integrity API → Link a Google Cloud project**. Create one, or pick one.
-2. In that project in the [Google Cloud console](https://console.cloud.google.com), enable the **Google Play Integrity API**. Then go to **IAM → Service accounts**, create one (no roles needed), and add a **JSON key**.
+1. In Play Console, open the app and go to **Protected with Play → Play Integrity API → Get started → Play Integrity API settings → Link Cloud project**. Create a project, or pick one. Linking also switches the API on in that project.
+2. In that project in the [Google Cloud console](https://console.cloud.google.com), go to **IAM and admin → Service accounts**, create one (no roles needed), and add a **JSON key**. The account must be in the linked project.
 3. On the server, add the following to `.env`, then redeploy with `docker compose up -d --build`:
    ```
    PLAY_INTEGRITY_PROJECT_NUMBER=<the project's number, from its settings page>

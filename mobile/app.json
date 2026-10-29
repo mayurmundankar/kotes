@@ -14,7 +14,6 @@
     ],
     "android": {
       "package": "com.kotes",
-      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#fff6f7",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
