@@ -93,10 +93,22 @@ export function Button({ label, busy, block, ink, disabled, style, ...rest }: Bu
 }
 
 /** Text with a trailing arrow (`.link`). */
-export function TextLink({ label, onPress, color = C.wine, arrow }: { label: string; onPress: () => void; color?: string; arrow?: React.ReactNode }) {
+export function TextLink({
+  label,
+  onPress,
+  color = C.wine,
+  size = 15,
+  arrow,
+}: {
+  label: string;
+  onPress: () => void;
+  color?: string;
+  size?: number;
+  arrow?: React.ReactNode;
+}) {
   return (
     <Pressable onPress={onPress} accessibilityRole="link" hitSlop={10} style={({ pressed }) => [s.link, pressed && { opacity: 0.6 }]}>
-      <Text style={[s.linkText, { color }]}>{label}</Text>
+      <Text style={[s.linkText, { color, fontSize: size }]}>{label}</Text>
       {arrow}
     </Pressable>
   );
