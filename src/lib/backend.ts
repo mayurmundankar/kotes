@@ -1,23 +1,9 @@
 // The browser's view of the kotes API (src/app/api). Auth is a session cookie
 // set by the server; the browser never holds a token or talks to the database.
 
-export type Quote = {
-  id: number;
-  text: string;
-  author: string;
-  source: string | null;
-  tags: string[];
-  liked: boolean;
-  saved: boolean;
-};
+import type { Kind, Quote, Session, Taste, User } from "./types";
 
-export type User = { id: string; email: string };
-export type Session = { user: User | null; onboarded: boolean };
-// `fav`: one of the reader's themes (picked, or liked/kept twice); the feed leans on these.
-export type Taste = { feature: string; weight: number; picked: boolean; fav: boolean };
-export type Kind = "like" | "save";
-
-export const OTP_LENGTH = 6;
+export * from "./types";
 
 export class ApiError extends Error {
   constructor(
