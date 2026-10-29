@@ -167,6 +167,7 @@ export const backend = {
   async react(quoteId: number, kind: Kind, on: boolean) {
     await api('reactions', { body: { quoteId, kind, on } });
   },
+  flushViews,
   recordView(quoteId: number, dwellMs: number) {
     views.push({ quoteId, dwellMs: Math.round(dwellMs) });
     if (views.length >= VIEW_BATCH) flushViews();

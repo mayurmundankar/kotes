@@ -15,10 +15,10 @@ import { C, F, T, em } from '@/theme';
 
 const EASE = Easing.bezier(0.2, 0.8, 0.2, 1);
 
-export function Wordmark({ size = 26, color = C.wine }: { size?: number; color?: string }) {
+export function Wordmark({ size = 26, color = C.wine, dot = C.rose }: { size?: number; color?: string; dot?: string }) {
   return (
     <Text style={[T.wordmark, { fontSize: size, letterSpacing: em(size, -0.02), color }]} accessibilityRole="header">
-      kotes<Text style={{ fontFamily: F.display, color: C.rose }}>.</Text>
+      kotes<Text style={{ fontFamily: F.display, color: dot }}>.</Text>
     </Text>
   );
 }
