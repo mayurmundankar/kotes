@@ -44,3 +44,7 @@ example
 
 # Play Console upload key for eas submit (never commit it)
 secrets/
+
+# EAS signing credentials (eas credentials download)
+credentials.json
+credentials/
