@@ -54,7 +54,7 @@ docker compose up -d --build
 3. The session is a random 256-bit token in an `HttpOnly`, `SameSite=Lax` cookie (also `Secure` in production). The database stores only its SHA-256 hash. Sessions last 90 days and are extended once a day while in use.
 4. `POST /api/auth/signout` deletes the session.
 
-**The Android app** (`mobile/`, package `com.kotes`) uses the same endpoints with `"platform": "android"` in the body:
+**The Android app** (`mobile/`, package `com.kotes.app`) uses the same endpoints with `"platform": "android"` in the body:
 
 - Instead of Turnstile, `auth/code` takes a **Google Play Integrity** token (`integrity`). Its request hash is SHA-256 (hex) of `kotes-signin:<email>` ([`src/lib/integrity.ts`](src/lib/integrity.ts)), so a token works for that one email only and for 5 minutes. The server asks Google to decode it and requires an app installed from Google Play (`PLAY_RECOGNIZED`) on a genuine device (`MEETS_DEVICE_INTEGRITY`). It fails closed. Until Play Integrity is set up, an `android` request gets the Turnstile check like any other, so the flag can't be used to skip it.
 - `auth/verify` returns the session `token` in the body and sets no cookie. The app keeps it in the Android Keystore and sends `Authorization: Bearer <token>` on every call. It's the same session as a cookie: hashed in the database, 90 days, sliding, ended by sign-out or account deletion.

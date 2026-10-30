@@ -1,6 +1,6 @@
 # kotes for Android
 
-The kotes app for Android (package `com.kotes`), built with Expo SDK 58 and Expo Router. It talks to the same API as the website, `https://kotes.mayurmundankar.com/api`. How the app signs in (Play Integrity, bearer tokens) is in the main README under *How sign-in works*.
+The kotes app for Android (package `com.kotes.app`), built with Expo SDK 58 and Expo Router. It talks to the same API as the website, `https://kotes.mayurmundankar.com/api`. How the app signs in (Play Integrity, bearer tokens) is in the main README under *How sign-in works*.
 
 ## Needs
 

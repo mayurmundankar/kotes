@@ -13,7 +13,7 @@
       "web"
     ],
     "android": {
-      "package": "com.kotes",
+      "package": "com.kotes.app",
       "adaptiveIcon": {
         "backgroundColor": "#fff6f7",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

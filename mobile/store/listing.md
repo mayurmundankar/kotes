@@ -83,4 +83,17 @@ Leave everything else unticked. kotes doesn't collect location, contacts, photos
 
 ## Release notes for 1.0.0
 
-> The kotes feed, now as an app: endless quotes tuned to you, a shelf for the ones you keep, and story images to share.
+Paste into the release's **Release notes** box (Play allows 500 characters per language):
+
+```
+<en-US>
+The first kotes app for Android.
+
+• An endless feed of quotes from the minds worth keeping, tuned to what moves you
+• Keep the lines you love on your Kept shelf
+• Share any quote as a story image in a choice of tones
+• Sign in with a code sent to your email: no password
+• Pick your themes and change them any time
+• Delete your account from the app whenever you like
+</en-US>
+```

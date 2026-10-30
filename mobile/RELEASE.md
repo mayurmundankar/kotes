@@ -27,7 +27,7 @@ Plan for about three weeks from step 1 to readers.
    npx eas-cli@latest build -p android --profile production
    ```
    On the first run, let EAS **generate a new keystore**. That's the upload key. EAS stores it, and Google holds the real signing key (Play App Signing).
-2. Download the `.aab` from the build page. In Play Console go to **Test and release → Testing → Internal testing → Create new release** and upload it. This fixes the package name as `com.kotes` for good.
+2. Download the `.aab` from the build page. In Play Console go to **Test and release → Testing → Internal testing → Create new release** and upload it. This fixes the package name as `com.kotes.app` for good.
 
 ## 3. Switch on Play Integrity (the app's human check)
 
@@ -44,7 +44,7 @@ Until this is done the app can't sign anyone in, because the server falls back t
    ```bash
    node -e "console.log(require('fs').readFileSync('key.json').toString('base64'))"
    ```
-4. Check it: `GET https://kotes.mayurmundankar.com/api/auth/config` should now show `"android": {"packageName": "com.kotes", …}`.
+4. Check it: `GET https://kotes.mayurmundankar.com/api/auth/config` should now show `"android": {"packageName": "com.kotes.app", …}`.
 
 ## 4. The review account
 
