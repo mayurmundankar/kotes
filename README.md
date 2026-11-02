@@ -13,7 +13,7 @@ The feed that reads you back. An endless, mobile-only quote feed for readers. Yo
 ```bash
 npm install
 cp .env.example .env.local   # fill it in
-npm run db:apply             # tables, functions, 147 quotes
+npm run db:apply             # tables, functions, 2000 quotes
 npm run dev
 ```
 
