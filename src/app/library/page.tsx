@@ -89,6 +89,7 @@ export default function Library() {
           {list.map((q, i) => (
             <li key={q.id} className={`${s.item} rise`} style={{ animationDelay: `${Math.min(i, 6) * 25}ms` }}>
               <blockquote>{q.text}</blockquote>
+              <p className={s.author}>{q.author}</p>
               <div className={s.row}>
                 <p className={s.tags}>{q.tags.map(themeLabel).join(" · ")}</p>
                 <div className={s.acts}>

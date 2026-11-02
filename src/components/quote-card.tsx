@@ -113,8 +113,8 @@ export function QuoteCard({ quote, tone, onReact, onShare, onEnter, onLeave }: P
         <blockquote ref={textRef} className={s.text}>
           {quote.text}
         </blockquote>
-        {/* Authors stay hidden: the words have to stand on their own. */}
         <span className={s.dash} aria-hidden />
+        <p className={s.author}>{quote.author}</p>
       </div>
 
       <p className={s.tags}>

@@ -97,6 +97,14 @@
   margin-right: 2px;
 }
 
+.author {
+  margin-top: 8px;
+  font-family: var(--read);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--ink-60);
+}
+
 .row {
   display: flex;
   align-items: flex-end;

@@ -50,6 +50,14 @@
   margin-top: 30px;
 }
 
+.author {
+  margin-top: 12px;
+  font-family: var(--read);
+  font-style: italic;
+  font-size: 16px;
+  color: var(--soft);
+}
+
 .tags {
   position: absolute;
   left: var(--gutter);

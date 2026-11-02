@@ -123,7 +123,7 @@ In the Supabase dashboard, the tables appear under **Table Editor → schema `ko
 
 ## How the feed learns
 
-Each reader has a weight for every theme (`love`, `stoic`, …) and for every author (`by:Seneca`). Authors are never shown on screen, but they still shape the feed.
+Each reader has a weight for every theme (`love`, `stoic`, …) and for every author (`by:Seneca`). Authors are shown under each quote, and they shape the feed too.
 
 | Signal | Effect on the quote's themes (authors get 0.6×) |
 | --- | --- |

@@ -62,8 +62,8 @@ export const GET = handle<{ params: Promise<{ id: string }> }>(async (req, ctx) 
   const toneParam = new URL(req.url).searchParams.get("tone");
   const c = PALETTE[isShareTone(toneParam) ? toneParam : "rose"];
 
-  const [quote] = await query<{ id: string; body: string; tags: string[] }>(
-    "select id, body, tags from kotes.quotes where id = $1",
+  const [quote] = await query<{ id: string; body: string; author: string; tags: string[] }>(
+    "select id, body, author, tags from kotes.quotes where id = $1",
     [id],
   );
   if (!quote) throw new HttpError("Unknown quote", 404);
@@ -99,6 +99,7 @@ export const GET = handle<{ params: Promise<{ id: string }> }>(async (req, ctx) 
             {quote.body}
           </div>
           <div style={{ display: "flex", width: 84, height: 3, marginTop: 56, background: c.accent }} />
+          <div style={{ display: "flex", marginTop: 28, fontFamily: "read", fontSize: 44, color: c.soft }}>{quote.author}</div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

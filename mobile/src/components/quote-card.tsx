@@ -110,8 +110,10 @@ export const QuoteCard = memo(function QuoteCard({ quote, tone, height, bottomIn
           accessibilityRole="text">
           {quote.text}
         </Text>
-        {/* Authors stay hidden: the words have to stand on their own. */}
         <View style={[s.dash, { backgroundColor: t.accent }]} />
+        <Text style={[s.author, { color: t.soft }]} maxFontSizeMultiplier={1.4}>
+          {quote.author}
+        </Text>
       </View>
 
       <View pointerEvents="none" style={[s.tags, { bottom: NAV_H + bottomInset + 26 }]}>
@@ -203,6 +205,7 @@ const s = StyleSheet.create({
   mark: { fontFamily: F.display, fontSize: 120, lineHeight: 120 * 0.9, height: 52, marginLeft: -6, overflow: 'visible' },
   text: { fontFamily: F.readMedium },
   dash: { width: 28, height: 1, marginTop: 30 },
+  author: { fontFamily: F.readItalic, fontSize: 16, marginTop: 12 },
   tags: { position: 'absolute', left: GUTTER, right: 80, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', gap: 14 },
   num: { fontFamily: F.displayItalic, fontSize: 13, letterSpacing: em(13, 0.02) },
   tag: { fontFamily: F.uiSemi, fontSize: 10.5, letterSpacing: em(10.5, 0.18), textTransform: 'uppercase' },

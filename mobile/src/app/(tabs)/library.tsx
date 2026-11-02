@@ -116,6 +116,7 @@ export default function Library() {
               <Text style={s.quoteMark}>“</Text>
               {q.text}
             </Text>
+            <Text style={s.author}>{q.author}</Text>
             <View style={s.row}>
               <Text style={s.tags}>{q.tags.map(themeLabel).join(' · ')}</Text>
               <View style={s.acts}>
@@ -176,6 +177,7 @@ const s = StyleSheet.create({
   item: { paddingTop: 28, paddingBottom: 22, borderBottomWidth: 1, borderBottomColor: C.ink12 },
   quote: { fontFamily: F.readMedium, fontSize: 25, lineHeight: 30, color: C.wine },
   quoteMark: { fontFamily: F.display, color: C.rose },
+  author: { fontFamily: F.readItalic, fontSize: 16, color: C.ink60, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 16 },
   tags: {
     flex: 1,
