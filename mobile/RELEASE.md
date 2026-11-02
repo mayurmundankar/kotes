@@ -29,24 +29,7 @@ Plan for about three weeks from step 1 to readers.
    On the first run, let EAS **generate a new keystore**. That's the upload key. EAS stores it, and Google holds the real signing key (Play App Signing).
 2. Download the `.aab` from the build page. In Play Console go to **Test and release → Testing → Internal testing → Create new release** and upload it. This fixes the package name as `com.kotes.app` for good.
 
-## 3. Switch on Play Integrity (the app's human check)
-
-Until this is done the app can't sign anyone in, because the server falls back to Turnstile, which the app can't pass.
-
-1. In Play Console, open the app and go to **Protected with Play → Play Integrity API → Get started → Play Integrity API settings → Link Cloud project**. Create a project, or pick one. Linking also switches the API on in that project.
-2. In that project in the [Google Cloud console](https://console.cloud.google.com), go to **IAM and admin → Service accounts**, create one (no roles needed), and add a **JSON key**. The account must be in the linked project.
-3. On the server, add the following to `.env`, then redeploy with `docker compose up -d --build`:
-   ```
-   PLAY_INTEGRITY_PROJECT_NUMBER=<the project's number, from its settings page>
-   PLAY_INTEGRITY_SERVICE_ACCOUNT=<base64 of the JSON key>
-   ```
-   To get the base64 of the key:
-   ```bash
-   node -e "console.log(require('fs').readFileSync('key.json').toString('base64'))"
-   ```
-4. Check it: `GET https://kotes.mayurmundankar.com/api/auth/config` should now show `"android": {"packageName": "com.kotes.app", …}`.
-
-## 4. The review account
+## 3. The review account
 
 Google's reviewers can't receive kotes' emails. Choose an address and a code, put both in the server's `.env`, and redeploy:
 
@@ -57,11 +40,11 @@ REVIEW_CODE=<6 random digits>
 
 That address signs in with that code, and no email is sent to it. Enter both under **App content → App access** (see `store/listing.md`). Keep the account for as long as the app is listed, because Google reviews every update.
 
-## 5. Internal testing (you)
+## 4. Internal testing (you)
 
 1. Under **Internal testing → Testers**, add your own Google account and open the opt-in link on your phone. Install kotes from Play.
 2. Try everything:
-   - sign in (Play Integrity passes only for an install from Play)
+   - sign in
    - onboarding
    - the feed: swipe, double-tap, keep
    - share to Instagram or WhatsApp, and Save image
@@ -69,11 +52,11 @@ That address signs in with that code, and no email is sent to it. Enter both und
    - delete a test account
 3. Take the phone screenshots for the listing while you're there.
 
-## 6. Store listing and App content
+## 5. Store listing and App content
 
 Fill in every page under **Grow → Main store listing** and **Policy → App content** from `store/listing.md`. Those are the listing, privacy policy, app access, ads, content rating, target audience, data safety and account deletion. The dashboard shows a tick for each one.
 
-## 7. Closed testing (12 testers × 14 days)
+## 6. Closed testing (12 testers × 14 days)
 
 1. Go to **Testing → Closed testing → Create track** (or use the default *Alpha*). Add at least 12 testers, as an email list or a Google Group. Send them the opt-in link and ask them to keep the app installed and use it now and then.
 2. Ship builds to the track:
@@ -88,7 +71,7 @@ Fill in every page under **Grow → Main store listing** and **Policy → App co
    Uploads arrive as **drafts**. Press **Review release → Start rollout** in Play Console to release one.
 3. After 14 days with 12 or more testers opted in, go to the Dashboard → **Apply for production**, and answer Google's questions about the test.
 
-## 8. Production
+## 7. Production
 
 Once production access is granted, promote the tested release (or run `submit --profile production`) and start with a **staged rollout**, for example 20%. Then raise it as Android vitals stay clean.
 

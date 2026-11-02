@@ -1,5 +1,5 @@
 // Sign-in, step one (email) and two (the emailed code). The web's /login,
-// with Play Integrity standing in for Turnstile.
+// without Turnstile.
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -30,7 +30,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Back } from '@/components/icons';
 import { Button, Eyebrow, Rise, Spinner, Wordmark } from '@/components/ui';
 import { ApiError, backend, OTP_LENGTH, reportError } from '@/lib/backend';
-import { APP_SIGNIN_OFF } from '@shared/integrity';
 import { C, F, GUTTER, SITE, T } from '@/theme';
 
 const RESEND_AFTER = 60;
@@ -47,11 +46,6 @@ export default function Login() {
   const [error, setError] = useState('');
   const [wait, setWait] = useState(0);
   const codeRef = useRef<TextInputInstance>(null);
-
-  // Fetch sign-in settings and warm up Play Integrity while they type.
-  useEffect(() => {
-    backend.prepareSignIn().catch(() => {});
-  }, []);
 
   useEffect(() => {
     if (wait <= 0) return;
@@ -85,9 +79,9 @@ export default function Login() {
     } catch (err) {
       setError((err as Error).message);
       if (err instanceof ApiError && err.retryAfter) setWait(err.retryAfter);
-      // Expected refusals (limits, bad email, app sign-in not set up) aren't
-      // bugs; anything else is worth seeing.
-      const expected = err instanceof ApiError && (err.status < 500 || err.message === APP_SIGNIN_OFF);
+      // Expected refusals (limits, bad email) aren't bugs; anything else is
+      // worth seeing.
+      const expected = err instanceof ApiError && err.status < 500;
       if (!expected) reportError('signup-code', err);
     } finally {
       setBusy(false);

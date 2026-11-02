@@ -1,6 +1,6 @@
 # kotes for Android
 
-The kotes app for Android (package `com.kotes.app`), built with Expo SDK 58 and Expo Router. It talks to the same API as the website, `https://kotes.mayurmundankar.com/api`. How the app signs in (Play Integrity, bearer tokens) is in the main README under *How sign-in works*.
+The kotes app for Android (package `com.kotes.app`), built with Expo SDK 58 and Expo Router. It talks to the same API as the website, `https://kotes.mayurmundankar.com/api`. How the app signs in (bearer tokens) is in the main README under *How sign-in works*.
 
 ## Needs
 
@@ -16,7 +16,7 @@ npx eas-cli@latest build --profile development --platform android   # once, or a
 npx expo start                                                        # then open the dev build on the phone
 ```
 
-The app uses native modules (Play Integrity, the keystore, haptics), so **Expo Go can't run it**. Use the development build.
+The app uses native modules (the keystore, haptics), so **Expo Go can't run it**. Use the development build.
 
 `npm run web` opens a browser preview for checking layouts. It forwards `/api` to the local Next server on port 3001, which `KOTES_DEV_API` can change. Entrance animations are skipped there.
 
@@ -37,9 +37,9 @@ To point a build at another server, set `EXPO_PUBLIC_API_URL` in [`eas.json`](ea
 ```
 src/app/            screens (Expo Router): welcome, login, onboarding, (tabs)/feed, library, you
 src/components/     icons, nav, toast, shared UI
-src/lib/            API client (backend.ts), session store, keystore, Play Integrity
+src/lib/            API client (backend.ts), session store, keystore
 src/theme.ts        colours, fonts and type, mirroring the web's globals.css
 assets/fonts/       TTF copies of the web fonts (built by ../scripts/build-fonts.py)
 ```
 
-`@shared/*` imports come straight from the website's `../src/lib` (themes, share tones, API types, the integrity request string), so both apps share one source of truth.
+`@shared/*` imports come straight from the website's `../src/lib` (themes, share tones, API types), so both apps share one source of truth.

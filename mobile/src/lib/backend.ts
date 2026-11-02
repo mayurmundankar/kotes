@@ -4,9 +4,7 @@
 import Constants from 'expo-constants';
 import { AppState, Platform } from 'react-native';
 
-import { APP_SIGNIN_OFF } from '@shared/integrity';
 import type { Kind, Quote, Session, Taste, User } from '@shared/types';
-import { appCheckToken, prepareAppCheck, type AppCheck } from './integrity';
 import { storage } from './storage';
 
 export type { Kind, Quote, Session, Taste, User };
@@ -103,43 +101,9 @@ export function reportError(where: string, err: unknown) {
   api('client-error', { body: { where, message } }).catch(() => {});
 }
 
-// Public sign-in settings. Kept once the server can verify the app; fetched
-// again otherwise (after a failure, or while Play Integrity isn't set up), so
-// switching it on on the server needs no app restart.
-type Config = { turnstileSiteKey: string | null; android: AppCheck | null };
-let config: Promise<Config> | null = null;
-function getConfig() {
-  config ??= api<Config>('auth/config').then(
-    (c) => {
-      if (!c.android) config = null;
-      return c;
-    },
-    (e) => {
-      config = null;
-      throw e;
-    },
-  );
-  return config;
-}
-
 export const backend = {
-  /** Fetches sign-in settings and warms up Play Integrity before it's needed. */
-  async prepareSignIn() {
-    const { android } = await getConfig();
-    if (android) await prepareAppCheck(android);
-  },
   async sendCode(email: string) {
-    const { android, turnstileSiteKey } = await getConfig();
-    // The server would refuse anyway: don't spend one of the network's tries on it.
-    if (Platform.OS !== 'web' && !android && turnstileSiteKey) throw new ApiError(APP_SIGNIN_OFF, 503);
-    let integrity: string | undefined;
-    try {
-      integrity = await appCheckToken(android, email);
-    } catch (e) {
-      reportError('integrity', e);
-      throw new ApiError("Couldn't check this device. Make sure Google Play is up to date and try again.", 0);
-    }
-    await api('auth/code', { body: { email, platform: 'android', integrity } });
+    await api('auth/code', { body: { email, platform: 'android' } });
   },
   async verifyCode(email: string, code: string) {
     const res = await api<{ reader: User; onboarded: boolean; token?: string }>('auth/verify', {

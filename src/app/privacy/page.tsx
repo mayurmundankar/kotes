@@ -96,11 +96,7 @@ export default function Privacy() {
             understand how the website is used, not for advertising. The Android app doesn&apos;t use it.
           </dd>
           <dt>Google Play</dt>
-          <dd>
-            Distributes the Android app. When you sign in on the app, Google Play Integrity
-            confirms the request comes from the genuine kotes app on a real device, in place of Turnstile. Google
-            looks at signals about the app and the device; kotes receives only the verdict.
-          </dd>
+          <dd>Distributes the Android app.</dd>
         </dl>
         <p>Each processes data only to provide its service to us.</p>
       </section>

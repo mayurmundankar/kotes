@@ -24,7 +24,6 @@ npm run dev
 | `APP_DB_PASSWORD` | `kotes_app`'s password. `db:apply` sets it on the role. Not needed on the app server. |
 | `AUTH_SECRET` | 32+ random characters. Used to hash sign-in codes. |
 | `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile keys (the human check). Empty = off. |
-| `PLAY_INTEGRITY_PROJECT_NUMBER`, `PLAY_INTEGRITY_SERVICE_ACCOUNT` | Google Play Integrity, the Android app's human check (see [How sign-in works](#how-sign-in-works)). |
 | `RESEND_API_KEY` | Resend API key. |
 | `RESEND_FROM` | Sender, e.g. `kotes <noreply.kotes@your-domain.com>`, on a domain verified in Resend. |
 
@@ -40,7 +39,7 @@ cp .env.example .env        # fill it in, using the Session pooler for DATABASE_
 docker compose up -d --build
 ```
 
-- The server's `.env` needs only `DATABASE_URL` (the `kotes_app` pooler string), `AUTH_SECRET`, `RESEND_API_KEY`, `RESEND_FROM`, the Turnstile keys and the Play Integrity settings. Never the admin URL.
+- The server's `.env` needs only `DATABASE_URL` (the `kotes_app` pooler string), `AUTH_SECRET`, `RESEND_API_KEY`, `RESEND_FROM` and the Turnstile keys. Never the admin URL.
 - The container listens on `127.0.0.1:3000`. Put it behind something that terminates **HTTPS**, such as Cloudflare Tunnel, Caddy or nginx. In production, sign-in cookies are `Secure`, so signing in over plain `http://` won't work.
 - The proxy must pass the real client IP (`CF-Connecting-IP` or `X-Forwarded-For`), because the per-IP rate limits key on it. Don't expose port 3000 to the internet directly.
 - `GET /api/health` returns `{"ok":true}` when the server can reach the database. Docker uses it as the container health check.
@@ -56,11 +55,8 @@ docker compose up -d --build
 
 **The Android app** (`mobile/`, package `com.kotes.app`) uses the same endpoints with `"platform": "android"` in the body:
 
-- Instead of Turnstile, `auth/code` takes a **Google Play Integrity** token (`integrity`). Its request hash is SHA-256 (hex) of `kotes-signin:<email>` ([`src/lib/integrity.ts`](src/lib/integrity.ts)), so a token works for that one email only and for 5 minutes. The server asks Google to decode it and requires an app installed from Google Play (`PLAY_RECOGNIZED`) on a genuine device (`MEETS_DEVICE_INTEGRITY`). It fails closed. Until Play Integrity is set up, an `android` request gets the Turnstile check like any other, so the flag can't be used to skip it.
+- `auth/code` skips Turnstile, which the app can't show. Nothing proves a request really comes from the app, so anyone can send the flag to skip the human check. Only the rate limits apply to these requests: per network, per email and the global `MAX_CODES_PER_HOUR`.
 - `auth/verify` returns the session `token` in the body and sets no cookie. The app keeps it in the Android Keystore and sends `Authorization: Bearer <token>` on every call. It's the same session as a cookie: hashed in the database, 90 days, sliding, ended by sign-out or account deletion.
-- `GET /api/auth/config` tells the app the package name and Cloud project number it needs to ask Google for a token.
-
-To set up Play Integrity: Play Console → *Protected with Play* → *Play Integrity API* → link a Google Cloud project. In that project, create a service account key. Put the project number and the key in `PLAY_INTEGRITY_PROJECT_NUMBER` and `PLAY_INTEGRITY_SERVICE_ACCOUNT` (see `.env.example`). Development builds aren't installed from Play, so a development server can set `PLAY_INTEGRITY_ALLOW_TEST_BUILDS=1`. Never set it in production; the server warns at startup if it's on.
 
 **Store review:** Google's reviewers can't receive kotes' emails, so `REVIEW_EMAIL` + `REVIEW_CODE` (6 digits) set up one account that signs in with that fixed code and gets no email. Every limit and lockout still applies. Releasing the app step by step: [`mobile/RELEASE.md`](mobile/RELEASE.md).
 
@@ -173,7 +169,7 @@ Edit [`src/data/quotes.json`](src/data/quotes.json), then run `npm run seed:sql`
 ```
 src/app/            landing, login, onboarding, feed, library ("Kept"), you, privacy
 src/app/api/        auth (code, verify, signout), me, feed, reactions, views, library, taste, health
-src/server/         db pool, auth, Play Integrity, rate limits, Resend email, data access (server-only)
+src/server/         db pool, auth, rate limits, Resend email, data access (server-only)
 src/fonts/          static WOFF2 fonts (built by scripts/build-fonts.py)
 mobile/             the Android app (Expo); mobile/assets/fonts holds TTF copies of the fonts
 src/lib/backend.ts  the browser's typed client for /api

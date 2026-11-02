@@ -77,7 +77,7 @@ Data types to tick (all *Collected*, not *Shared*, not *Processed ephemerally*):
 | App info and performance → Crash logs | Required | App functionality |
 | App info and performance → Diagnostics (error messages, app version) | Required | App functionality |
 
-Leave everything else unticked. kotes doesn't collect location, contacts, photos, files, device IDs or advertising IDs. The IP address is used only in memory, against abuse, which Play's form doesn't ask about. The Play Integrity check is done by Google; kotes only receives a pass or fail.
+Leave everything else unticked. kotes doesn't collect location, contacts, photos, files, device IDs or advertising IDs. The IP address is used only in memory, against abuse, which Play's form doesn't ask about.
 
 **Account deletion URL:** `https://kotes.mayurmundankar.com/privacy#delete`
 
