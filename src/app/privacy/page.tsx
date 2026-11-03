@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 // Where readers can write about their data. Left empty, the page points them
 // to in-app deletion only.
 const CONTACT_EMAIL = "privacy.kotes@mayurmundankar.com";
-const UPDATED = "30 October 2026";
+const UPDATED = "4 November 2026";
 
 export default function Privacy() {
   return (
@@ -94,6 +94,11 @@ export default function Privacy() {
             device type, browser and country (worked out from your IP address). It sees page addresses like{" "}
             <em>/feed</em>, never your email, the quotes you read or what you like and keep. We use it only to
             understand how the website is used, not for advertising. The Android app doesn&apos;t use it.
+          </dd>
+          <dt>UsefulShelf</dt>
+          <dd>
+            On the website only, serves the small badge at the bottom of some pages. Loading it shows UsefulShelf your
+            IP address and browser, as with any image from another site. It never sees your email or what you read.
           </dd>
           <dt>Google Play</dt>
           <dd>Distributes the Android app.</dd>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import Script from "next/script";
+import { UsefulShelfBadge } from "@/components/usefulshelf-badge";
 import "./globals.css";
 
 // Google Analytics (GA4) for the website only; the Android app doesn't load it.
@@ -73,6 +74,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${dmSerif.variable} ${garamond.variable} ${manrope.variable}`}>
       <body>
         <div className="app">{children}</div>
+        <footer className="site-foot">
+          <UsefulShelfBadge />
+        </footer>
         {analytics && (
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`} strategy="afterInteractive" />
