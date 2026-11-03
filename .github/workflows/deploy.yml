@@ -70,5 +70,8 @@ jobs:
           release="/tmp/kotes-release-$GITHUB_SHA.tgz"
           scp $options kotes-release.tgz "$TARGET:$release"
           ssh $options "$TARGET" "git -C '$DEPLOY_PATH' fetch --quiet origin master && git -C '$DEPLOY_PATH' reset --hard --quiet '$GITHUB_SHA' && bash '$DEPLOY_PATH/scripts/deploy.sh' '$release'"
+      # Straight to the server: Cloudflare can refuse requests from GitHub's runners.
       - name: Check the live site
-        run: curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors "$SITE_URL/api/health"
+        env:
+          DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+        run: curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors --resolve "${SITE_URL#https://}:443:$DEPLOY_HOST" "$SITE_URL/api/health"

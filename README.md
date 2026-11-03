@@ -49,7 +49,7 @@ docker compose up -d --build
 
 ### Automatic deploys
 
-`kotes.pavlin.tech` runs on an EC2 server without Docker: nginx in front, and pm2 running the standalone build on `127.0.0.1:3000`.
+`kotes.pavlin.tech` runs on an EC2 server without Docker: Cloudflare's proxy, then nginx, then pm2 running the standalone build on `127.0.0.1:3000`. nginx takes the reader's IP from `CF-Connecting-IP` only for requests from [Cloudflare's ranges](https://www.cloudflare.com/ips/) (`/etc/nginx/conf.d/cloudflare-real-ip.conf`), and passes the app that address alone. Update that list if Cloudflare changes its ranges, or the per-IP limits will start treating Cloudflare as the reader.
 
 [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) lints and builds every push and pull request. A push to `master` then packages the build, copies it to the server, moves the clone there to that commit and runs [`scripts/deploy.sh`](scripts/deploy.sh). If `/api/health` doesn't turn healthy, the previous release comes back and the run fails. Changes that only touch `mobile/` or Markdown don't deploy.
 
