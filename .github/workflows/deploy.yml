@@ -1,6 +1,6 @@
-# Lints and builds every push and pull request. Pushes to master then deploy the
-# build to the server (setup: README → Automatic deploys). Deploying stays off
-# until the DEPLOY_HOST and SITE_URL variables exist.
+# Lints and builds every push and pull request. Pushes to master then build for
+# production and deploy to the server, using the settings in the kotes-env
+# environment (setup: README → Automatic deploys).
 name: Check and deploy
 
 on:
@@ -14,18 +14,12 @@ on:
 permissions:
   contents: read
 
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
 jobs:
-  build-and-deploy:
+  check:
     runs-on: ubuntu-latest
-    # Deploys run one at a time. Pull requests don't wait for each other.
-    concurrency:
-      group: ${{ github.event_name == 'pull_request' && github.run_id || 'production' }}
-      cancel-in-progress: false
-    env:
-      NEXT_TELEMETRY_DISABLED: 1
-      # Prerendered pages bake this in. Pull requests may not see the variable.
-      SITE_URL: ${{ vars.SITE_URL || 'https://kotes.mayurmundankar.com' }}
-      DEPLOY: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/master' && vars.DEPLOY_HOST != '' && vars.SITE_URL != '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -36,11 +30,29 @@ jobs:
       - run: npm run lint
       - run: npm run build
 
+  deploy:
+    needs: check
+    if: github.repository == 'mayurmundankar/kotes' && github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    environment: kotes-env
+    # One at a time: a newer push waits for the running deploy.
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    env:
+      # Prerendered pages bake this in, so this build is the one that ships.
+      SITE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm run build
       - name: Package the release
-        if: env.DEPLOY == 'true'
         run: bash scripts/package-release.sh kotes-release.tgz
       - name: Set up SSH
-        if: env.DEPLOY == 'true'
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
@@ -50,7 +62,6 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
       - name: Deploy
-        if: env.DEPLOY == 'true'
         env:
           TARGET: ${{ vars.DEPLOY_USER }}@${{ vars.DEPLOY_HOST }}
           DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
@@ -60,5 +71,4 @@ jobs:
           scp $options kotes-release.tgz "$TARGET:$release"
           ssh $options "$TARGET" "git -C '$DEPLOY_PATH' fetch --quiet origin master && git -C '$DEPLOY_PATH' reset --hard --quiet '$GITHUB_SHA' && bash '$DEPLOY_PATH/scripts/deploy.sh' '$release'"
       - name: Check the live site
-        if: env.DEPLOY == 'true'
         run: curl --fail --silent --show-error --retry 5 --retry-delay 5 --retry-all-errors "$SITE_URL/api/health"

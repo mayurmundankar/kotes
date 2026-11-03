@@ -61,7 +61,7 @@ The build happens on GitHub because the server has only 2 GB of memory and also 
 | `~/kotes/.env.production` | The production settings. git ignores it. After changing it run `pm2 restart kotes-app --update-env`, and redeploy if `SITE_URL` changed |
 | `~/kotes-app/current` | The running release (`previous` is the one before it) |
 
-Set up once, in GitHub → Settings → Secrets and variables → Actions:
+Set up once, in GitHub → Settings → Environments → `kotes-env`:
 
 | Kind | Name | Value |
 | --- | --- | --- |
@@ -70,7 +70,7 @@ Set up once, in GitHub → Settings → Secrets and variables → Actions:
 | Variable | `DEPLOY_USER` | The SSH user |
 | Variable | `DEPLOY_PATH` | The clone on the server, as an absolute path |
 | Variable | `SITE_URL` | The live site's URL. Baked into the build and checked after each deploy |
-| Variable | `DEPLOY_HOST` | The server's address. Add this last: deploying stays off until it exists |
+| Variable | `DEPLOY_HOST` | The server's address |
 
 ## How sign-in works
 
