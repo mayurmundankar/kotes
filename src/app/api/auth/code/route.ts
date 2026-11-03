@@ -1,5 +1,6 @@
 import { normalizeEmail, requestCode } from "@/server/auth";
-import { verifyHuman } from "@/server/human";
+// TURNSTILE OFF: restore this and the check below to turn the human check back on.
+// import { verifyHuman } from "@/server/human";
 import { handle, readJson } from "@/server/http";
 import { limitIp } from "@/server/ratelimit";
 import { secLog } from "@/server/seclog";
@@ -21,7 +22,8 @@ export const POST = handle(async (req) => {
   const email = normalizeEmail(body.email);
   // The Android app has no Turnstile, so it skips the human check and relies on
   // the rate limits: per network above, per email and overall in requestCode.
-  if (body.platform !== "android") await verifyHuman(body.turnstile, ip);
+  // TURNSTILE OFF
+  // if (body.platform !== "android") await verifyHuman(body.turnstile, ip);
   await requestCode(email);
   return Response.json({ ok: true });
 });

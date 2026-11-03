@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ApiError, backend, OTP_LENGTH, reportError } from "@/lib/backend";
 import { useGuard } from "@/components/session";
-import { useTurnstile } from "@/components/turnstile";
+// TURNSTILE OFF: restore every line marked like this to turn the human check back on.
+// import { useTurnstile } from "@/components/turnstile";
 import { Back } from "@/components/icons";
 import s from "./login.module.css";
 
@@ -22,7 +23,8 @@ export default function Login() {
   const [wait, setWait] = useState(0);
   const codeRef = useRef<HTMLInputElement>(null);
   const honeypot = useRef<HTMLInputElement>(null);
-  const { box: humanBox, getToken, reset: resetHuman, ready: humanReady } = useTurnstile();
+  // TURNSTILE OFF
+  // const { box: humanBox, getToken, reset: resetHuman, ready: humanReady } = useTurnstile();
 
   useEffect(() => {
     if (wait <= 0) return;
@@ -38,7 +40,8 @@ export default function Login() {
     setError("");
     try {
       await backend.sendCode(clean, {
-        turnstile: await getToken(),
+        // TURNSTILE OFF: was `await getToken()`
+        turnstile: "",
         website: honeypot.current?.value ?? "",
         automated: navigator.webdriver === true,
       });
@@ -53,7 +56,8 @@ export default function Login() {
       // Expected refusals (limits, bad email) carry a 4xx; anything else is a bug worth seeing.
       if (!(err instanceof ApiError) || err.status === 0 || err.status >= 500) reportError("signup-code", err);
     } finally {
-      resetHuman();
+      // TURNSTILE OFF
+      // resetHuman();
       setBusy(false);
     }
   }
@@ -129,7 +133,8 @@ export default function Login() {
           />
           <p className="error">{error}</p>
           <div className={s.foot}>
-            <button className="btn block" disabled={busy || !email || !humanReady}>
+            {/* TURNSTILE OFF: also needs `|| !humanReady` */}
+            <button className="btn block" disabled={busy || !email}>
               {busy ? <span className="spinner" style={{ borderTopColor: "var(--paper)" }} /> : "Continue with email"}
             </button>
             <p className={s.promise}>
@@ -191,8 +196,8 @@ export default function Login() {
         </div>
       )}
 
-      {/* Turnstile mounts here; empty unless Cloudflare needs a click. */}
-      <div ref={humanBox} className={s.human} />
+      {/* TURNSTILE OFF: it mounts here; empty unless Cloudflare needs a click. */}
+      {/* <div ref={humanBox} className={s.human} /> */}
     </main>
   );
 }
