@@ -7,21 +7,24 @@ const TURNSTILE = "https://challenges.cloudflare.com";
 const GA_SCRIPT = "https://*.googletagmanager.com";
 const GA_CONNECT = "https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com";
 const GA_IMG = "https://*.google-analytics.com https://*.googletagmanager.com";
+// Cloudflare Web Analytics: Cloudflare adds this script to pages it proxies.
+const CF_SCRIPT = "https://static.cloudflareinsights.com";
+const CF_CONNECT = "https://cloudflareinsights.com";
 // The UsefulShelf badge in the footer.
 const BADGE_IMG = "https://usefulshelf.co";
 
 // Next's inline bootstrap scripts need 'unsafe-inline' (pages are prerendered,
 // so per-request nonces aren't possible). The rest is locked to this origin,
-// plus Cloudflare's human check and Google Analytics. React escapes all output
+// plus Cloudflare's human check and analytics, and Google Analytics. React escapes all output
 // and nothing renders raw HTML, so there is no injection point for inline
 // script to exploit.
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' ${TURNSTILE} ${GA_SCRIPT}`,
+  `script-src 'self' 'unsafe-inline' ${TURNSTILE} ${GA_SCRIPT} ${CF_SCRIPT}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: ${GA_IMG} ${BADGE_IMG}`,
   "font-src 'self'",
-  `connect-src 'self' ${TURNSTILE} ${GA_CONNECT}`,
+  `connect-src 'self' ${TURNSTILE} ${GA_CONNECT} ${CF_CONNECT}`,
   `frame-src ${TURNSTILE}`,
   "worker-src 'self' blob:",
   "object-src 'none'",

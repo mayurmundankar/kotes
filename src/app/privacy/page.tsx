@@ -34,7 +34,7 @@ export default function Privacy() {
       <section className={s.short}>
         <p>kotes is a quiet place to read. We keep only what it takes to sign you in and to choose what you read next.</p>
         <ul>
-          <li>No passwords, no ads. The website counts visits with Google Analytics; the app counts nothing.</li>
+          <li>No passwords, no ads. The website counts visits with Google Analytics and Cloudflare; the app counts nothing.</li>
           <li>We never sell or share your data for marketing.</li>
           <li>We don&apos;t have bandwidth to send you promotional emails. Only sign-in codes.</li>
           <li>Delete your account any time, and everything goes with it.</li>
@@ -86,7 +86,8 @@ export default function Privacy() {
           <dd>
             Carries traffic to kotes securely, and runs Turnstile, the quiet check on the sign-in page that tells
             people from bots. Turnstile looks at signals from your browser and device; it doesn&apos;t use cookies to
-            track you across sites.
+            track you across sites. On the website, Cloudflare Web Analytics also counts visits and measures how fast
+            pages load, without cookies. It sees page addresses and your browser, never your email or what you read.
           </dd>
           <dt>Google Analytics</dt>
           <dd>
