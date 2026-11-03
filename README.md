@@ -23,7 +23,7 @@ npm run dev
 | `DATABASE_ADMIN_URL` | The `postgres` login, used **only** by `npm run db:apply`. Keep it off the app server. |
 | `APP_DB_PASSWORD` | `kotes_app`'s password. `db:apply` sets it on the role. Not needed on the app server. |
 | `AUTH_SECRET` | 32+ random characters. Used to hash sign-in codes. |
-| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile keys (the human check). Empty = off. |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile keys (the human check). Empty = off. Ignored while the check is commented out (see [Security](#security)). |
 | `RESEND_API_KEY` | Resend API key. |
 | `RESEND_FROM` | Sender, e.g. `kotes <noreply.kotes@your-domain.com>`, on a domain verified in Resend. |
 
@@ -44,7 +44,33 @@ docker compose up -d --build
 - The proxy must pass the real client IP (`CF-Connecting-IP` or `X-Forwarded-For`), because the per-IP rate limits key on it. Don't expose port 3000 to the internet directly.
 - `GET /api/health` returns `{"ok":true}` when the server can reach the database. Docker uses it as the container health check.
 - Without Docker: `npm ci && npm run build`, copy `.next/static` → `.next/standalone/.next/static` and `public` → `.next/standalone/public`, then run `node .next/standalone/server.js` with the environment variables set.
-- Database changes: run `npm run db:apply` from any machine that has `DATABASE_URL`. It's safe to re-run.
+- Database changes: run `npm run db:apply` from any machine that has `DATABASE_URL`. It's safe to re-run. Deploys don't run it.
+- A new domain needs three things: `SITE_URL` in the server's `.env` (read at build time, so rebuild), the hostname on the Turnstile widget (Cloudflare → Turnstile → the widget → Hostname Management), and a certificate.
+
+### Automatic deploys
+
+`kotes.pavlin.tech` runs on an EC2 server without Docker: nginx in front, and pm2 running the standalone build on `127.0.0.1:3000`.
+
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) lints and builds every push and pull request. A push to `master` then packages the build, copies it to the server, moves the clone there to that commit and runs [`scripts/deploy.sh`](scripts/deploy.sh). If `/api/health` doesn't turn healthy, the previous release comes back and the run fails. Changes that only touch `mobile/` or Markdown don't deploy.
+
+The build happens on GitHub because the server has only 2 GB of memory and also has to keep serving readers.
+
+| On the server | What it is |
+| --- | --- |
+| `~/kotes` | A git clone of this repo, moved to each deployed commit |
+| `~/kotes/.env.production` | The production settings. git ignores it. After changing it run `pm2 restart kotes-app --update-env`, and redeploy if `SITE_URL` changed |
+| `~/kotes-app/current` | The running release (`previous` is the one before it) |
+
+Set up once, in GitHub → Settings → Secrets and variables → Actions:
+
+| Kind | Name | Value |
+| --- | --- | --- |
+| Secret | `DEPLOY_SSH_KEY` | A private key used only for this. Its public half is in the SSH user's `~/.ssh/authorized_keys` |
+| Secret | `DEPLOY_KNOWN_HOSTS` | The server's SSH host keys, in `known_hosts` format |
+| Variable | `DEPLOY_USER` | The SSH user |
+| Variable | `DEPLOY_PATH` | The clone on the server, as an absolute path |
+| Variable | `SITE_URL` | The live site's URL. Baked into the build and checked after each deploy |
+| Variable | `DEPLOY_HOST` | The server's address. Add this last: deploying stays off until it exists |
 
 ## How sign-in works
 
@@ -73,7 +99,7 @@ POST routes only accept JSON. Combined with `SameSite=Lax`, that blocks cross-si
 Layered so that no single failure exposes readers. Every item below was tested against a production build with automated attack scripts.
 
 **Bots and AI agents**
-- **Cloudflare Turnstile** on the sign-in step. It's invisible for most people and shows a checkbox only when unsure. The server verifies every token with Cloudflare and fails closed if it can't.
+- **Cloudflare Turnstile** on the sign-in step. **Currently commented out**, so only the rate limits and the checks below protect it: search `src` for `TURNSTILE OFF` to restore it, and add the site's hostname to the widget first. It's invisible for most people and shows a checkbox only when unsure. The server verifies every token with Cloudflare and fails closed if it can't.
 - **Honeypot field** and the browser's **automation flag** (`navigator.webdriver`, set by Selenium, Playwright, Puppeteer and most agent browsers). Both get a *fake* "code sent", so bots learn nothing.
 - **robots.txt** turns away ~35 AI crawlers and scrapers by name, and all bots from the app and API. `X-Robots-Tag: noindex…` on private pages and `noai, noimageai` everywhere.
 - **Per-reader limits** far above human reading speed: 40 feed batches (320 quotes) per 10 min. Signed-in scrapers hit the ceiling fast.

@@ -2,7 +2,11 @@
 # then: docker compose up -d --build
 services:
   kotes:
-    build: .
+    build:
+      context: .
+      args:
+        # Read from .env. Prerendered pages bake it in, so changing it needs a rebuild.
+        SITE_URL: ${SITE_URL:-https://kotes.mayurmundankar.com}
     image: kotes:latest
     container_name: kotes
     restart: unless-stopped
