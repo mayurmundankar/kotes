@@ -3,7 +3,7 @@ import { Stack, type ErrorBoundaryProps } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { AppState, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -11,11 +11,13 @@ import { ToastProvider } from '@/components/toast';
 import { Button, Eyebrow, Wordmark } from '@/components/ui';
 import { reportError } from '@/lib/backend';
 import { installCrashReporting } from '@/lib/crash';
+import { forgetMorning, installMorningHandler, refreshMorning } from '@/lib/morning';
 import { useSession } from '@/lib/session';
 import { C, F, GUTTER, FONT_FILES } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 installCrashReporting();
+installMorningHandler();
 
 /** A screen failed to draw: say so kindly, report it, and offer a way back. */
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -50,6 +52,21 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
+
+  // Signed in: keep the next two weeks of morning quotes topped up on each
+  // visit. Signed out or deleted: stop them, and forget the choice.
+  useEffect(() => {
+    if (status === 'out') {
+      forgetMorning().catch(() => {});
+      return;
+    }
+    if (status !== 'in' || !onboarded) return;
+    refreshMorning().catch(() => {});
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') refreshMorning().catch(() => {});
+    });
+    return () => sub.remove();
+  }, [status, onboarded]);
 
   if (!ready) return null;
 

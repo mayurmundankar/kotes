@@ -3,7 +3,7 @@
 import { useIsFocused } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, FlatList, Pressable, StyleSheet, Text, View, useWindowDimensions, type ListViewToken } from 'react-native';
+import { AccessibilityInfo, AppState, Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -14,12 +14,15 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MorningOffer } from '@/components/morning';
 import { setNavTone } from '@/components/nav';
 import { QuoteCard, TONE, TONES, type Tone } from '@/components/quote-card';
+import { QuotePager, type PagerHandle } from '@/components/quote-pager';
 import { ShareSheet } from '@/components/share-sheet';
 import { useToast } from '@/components/toast';
 import { Eyebrow, Spinner, Wordmark } from '@/components/ui';
 import { backend, type Kind, type Quote } from '@/lib/backend';
+import { onMorningTap, shouldOfferMorning } from '@/lib/morning';
 import { C, F, GUTTER, NAV_H, em } from '@/theme';
 
 type Item = { key: string; q: Quote };
@@ -27,8 +30,8 @@ type Item = { key: string; q: Quote };
 const BATCH = 8;
 const PREFETCH = 3; // load more when this close to the end
 const RECENT = 40; // never repeat a quote within this many cards
+const OFFER_AFTER = 8; // quotes read before the morning quote is ever mentioned
 const toneAt = (i: number): Tone => TONES[i % TONES.length];
-const VIEWABILITY = { itemVisiblePercentThreshold: 60 };
 
 export default function Feed() {
   const insets = useSafeAreaInsets();
@@ -104,23 +107,50 @@ export default function Feed() {
     };
   }, [startDwell, endDwell]);
 
-  // The viewability handler reaches the latest functions through refs.
-  const startDwellRef = useRef(startDwell);
-  const loadRef = useRef(load);
+  const onPage = useCallback(
+    (i: number) => {
+      activeRef.current = i;
+      setActive(i);
+      startDwell();
+      if (i >= itemsRef.current.length - PREFETCH) load();
+    },
+    [startDwell, load],
+  );
+
+  // The first quote is on screen as soon as it arrives.
+  const hasItems = items.length > 0;
   useEffect(() => {
-    startDwellRef.current = startDwell;
-    loadRef.current = load;
-  }, [startDwell, load]);
-  // FlatList refuses a new handler after mount (even across a hot reload), so
-  // it's held in state, which never changes.
-  const [onViewable] = useState(() => ({ viewableItems }: { viewableItems: ListViewToken[] }) => {
-    const i = viewableItems[0]?.index;
-    if (i == null || (i === activeRef.current && dwell.current)) return;
-    activeRef.current = i;
-    setActive(i);
-    startDwellRef.current();
-    if (i >= itemsRef.current.length - PREFETCH) loadRef.current();
-  });
+    if (hasItems) onPage(activeRef.current);
+  }, [hasItems, onPage]);
+
+  // Tapping the morning notification opens that quote, next in the feed.
+  const pager = useRef<PagerHandle>(null);
+  useEffect(
+    () =>
+      onMorningTap((q) => {
+        const at = itemsRef.current.length ? activeRef.current + 1 : 0;
+        setItems((prev) => [...prev.slice(0, at), { key: `${q.id}.${seq.current++}`, q }, ...prev.slice(at)]);
+        if (at) setTimeout(() => pager.current?.goTo(at), 60);
+      }),
+    [],
+  );
+
+  // Mentioned once, only to someone who has settled in to read.
+  const [offering, setOffering] = useState(false);
+  const offered = useRef(false);
+  useEffect(() => {
+    if (active < OFFER_AFTER || offered.current) return;
+    offered.current = true;
+    shouldOfferMorning().then(setOffering);
+  }, [active]);
+
+  // A pan can't be performed with a screen reader, so it gets buttons instead.
+  const [reader, setReader] = useState(false);
+  useEffect(() => {
+    AccessibilityInfo.isScreenReaderEnabled().then(setReader);
+    const sub = AccessibilityInfo.addEventListener('screenReaderChanged', setReader);
+    return () => sub.remove();
+  }, []);
 
   const tone = toneAt(active);
   useEffect(() => {
@@ -156,10 +186,12 @@ export default function Feed() {
       {focused && <StatusBar style={dark ? 'light' : 'dark'} />}
 
       {items.length > 0 && (
-        <FlatList
-          data={items}
-          keyExtractor={(i) => i.key}
-          renderItem={({ item, index }) => (
+        <QuotePager
+          ref={pager}
+          items={items}
+          height={height}
+          keyOf={(i) => i.key}
+          renderPage={(item, index) => (
             <QuoteCard
               quote={item.q}
               tone={toneAt(index)}
@@ -169,21 +201,9 @@ export default function Feed() {
               onShare={onShare}
             />
           )}
-          getItemLayout={(_, index) => ({ length: height, offset: height * index, index })}
-          pagingEnabled
-          disableIntervalMomentum
-          decelerationRate="fast"
-          showsVerticalScrollIndicator={false}
-          overScrollMode="never"
-          onViewableItemsChanged={onViewable}
-          viewabilityConfig={VIEWABILITY}
-          onEndReached={() => load()}
-          onEndReachedThreshold={1.5}
-          initialNumToRender={2}
-          maxToRenderPerBatch={2}
-          windowSize={5}
-          removeClippedSubviews
-          ListFooterComponent={
+          onPage={onPage}
+          onEnd={load}
+          footer={
             empty ? undefined : (
               <View style={[s.more, { height: height * 0.4, backgroundColor: TONE[toneAt(items.length)].bg, paddingBottom: NAV_H + insets.bottom }]}>
                 <Spinner />
@@ -217,7 +237,20 @@ export default function Feed() {
         ))
       )}
 
-      {items.length > 0 && active === 0 && <SwipeHint top={insets.top + 70} />}
+      {items.length > 0 && active === 0 && !reader && <SwipeHint top={insets.top + 70} />}
+
+      {reader && items.length > 0 && (
+        <View style={[s.readerNav, { top: insets.top + 64 }]}>
+          <Pressable accessibilityRole="button" disabled={active === 0} onPress={() => pager.current?.goTo(active - 1)}>
+            <Text style={[s.readerBtn, { color: ink }]}>Previous quote</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => pager.current?.goTo(Math.min(active + 1, items.length - 1))}>
+            <Text style={[s.readerBtn, { color: ink }]}>Next quote</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {offering && <MorningOffer bottom={NAV_H + insets.bottom + 12} onClose={() => setOffering(false)} />}
 
       <ShareSheet quote={sharing?.quote ?? null} tone={sharing?.tone} onClose={() => setSharing(null)} />
     </View>
@@ -255,6 +288,8 @@ const s = StyleSheet.create({
   retry: { fontFamily: F.uiSemi, fontSize: 14, color: C.rose },
   endText: { fontFamily: F.read, fontSize: 22, lineHeight: 22 * 1.35, maxWidth: 300, textAlign: 'center', color: C.wine },
   more: { alignItems: 'center', justifyContent: 'center' },
+  readerNav: { position: 'absolute', left: GUTTER, right: GUTTER, flexDirection: 'row', justifyContent: 'space-between' },
+  readerBtn: { fontFamily: F.uiSemi, fontSize: 14, paddingVertical: 8 },
   swipe: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   swipeText: { fontFamily: F.uiSemi, fontSize: 10.5, letterSpacing: em(10.5, 0.2), textTransform: 'uppercase', color: C.ink40 },
 });

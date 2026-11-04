@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Arrow } from '@/components/icons';
+import { MorningSetting } from '@/components/morning';
 import { Page } from '@/components/page';
 import { TasteBreakdown } from '@/components/taste';
 import { useToast } from '@/components/toast';
@@ -87,6 +88,10 @@ export default function You() {
         </View>
         <Text style={s.note}>Everything you&apos;ve picked, liked, kept and lingered on, as a share of 100%.</Text>
         {taste === null ? <Spinner /> : <TasteBreakdown taste={taste} />}
+      </Rise>
+
+      <Rise delay={2} style={s.block}>
+        <MorningSetting />
       </Rise>
 
       <Rise delay={3} style={s.block}>

@@ -2,7 +2,7 @@
   "expo": {
     "name": "kotes",
     "slug": "kotes",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "kotes",
@@ -65,6 +65,13 @@
       ],
       "expo-secure-store",
       "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#e8365f"
+        }
+      ],
       [
         "expo-media-library",
         {

@@ -43,3 +43,14 @@ assets/fonts/       TTF copies of the web fonts (built by ../scripts/build-fonts
 ```
 
 `@shared/*` imports come straight from the website's `../src/lib` (themes, share tones, API types), so both apps share one source of truth.
+
+## Morning quote
+
+One optional notification a day, in [`src/lib/morning.ts`](src/lib/morning.ts). It's scheduled on the phone, so it needs no server, Firebase or notification token.
+
+- **Consent:** off by default. After a reader has read 8 quotes, the feed offers it once. Android's permission prompt only appears after they say yes there. *You → Morning quote* can turn it on or off at any time, and shows when Android's settings have blocked it.
+- **Quiet:** no sound, no vibration and no banner, at a time they choose (around 7, 8, 9 or 10). Android may deliver it a little late, since it doesn't use exact alarms, which Google Play restricts.
+- **Content:** the notification is the quote itself, with the author as its title and shorter quotes first. Each app visit schedules the next two weeks from the reader's own feed, or from a few built-in lines if it can't reach kotes. Someone who stops opening the app stops hearing from it. Tapping one opens that quote.
+- **Sign-out and deletion:** cancels what's scheduled and forgets the choice.
+
+To test without waiting for morning, turn it on and use *Send me one now*.
