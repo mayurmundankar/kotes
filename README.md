@@ -111,7 +111,7 @@ Layered so that no single failure exposes readers. Every item below was tested a
 - Strict email format: no quotes, commas or angle brackets ever reach the mail provider.
 
 **Sessions and requests**
-- Session cookie `__Host-kotes_session`: `Secure`, `HttpOnly`, `SameSite=Strict`, and no other `*.mayurmundankar.com` site can set or overwrite it. 256-bit random token, stored only as SHA-256.
+- Session cookie `__Host-kotes_session`: `Secure`, `HttpOnly`, `SameSite=Strict`, and no other `*.pavlin.tech` site can set or overwrite it. 256-bit random token, stored only as SHA-256.
 - CSRF is blocked three ways: `Sec-Fetch-Site`/`Origin` must be same-origin, bodies must be JSON, and the cookie is Strict.
 - Request bodies are capped at 16 KB; every API route has a per-IP ceiling.
 - Headers: strict CSP (self, Turnstile, Google Analytics, Cloudflare Web Analytics and the UsefulShelf badge image only, no framing), HSTS (2 years), COOP, CORP, `nosniff`, no referrer leakage, browser features off.
@@ -126,7 +126,7 @@ Layered so that no single failure exposes readers. Every item below was tested a
 - Security events are JSON lines: `docker logs kotes 2>&1 | grep '"sec"'` (emails are pseudonymised tags). Unexpected errors in readers' browsers are reported there too, as `"sec":"client_error"` with the browser name.
 
 **Do these in the dashboards (code can't):**
-1. **Cloudflare → Turnstile → Add widget** for `kotes.mayurmundankar.com` (mode: *Managed*). Put the keys in the server's `.env`.
+1. **Cloudflare → Turnstile → Add widget** for `kotes.pavlin.tech` (mode: *Managed*). Put the keys in the server's `.env`.
 2. **Cloudflare → Security → Bots:** turn on **Block AI bots** and **Bot Fight Mode**. Optionally turn on **AI Labyrinth**, which traps crawlers that ignore robots.txt.
 3. **Cloudflare → Security → WAF → Rate limiting rules:** e.g. `/api/auth/` at 10 requests/min per IP, block for 10 min. This stops floods before they reach your server.
 4. **Cloudflare → SSL/TLS:** mode *Full (strict)*, plus *Always Use HTTPS* and *Minimum TLS 1.2*.
@@ -160,7 +160,7 @@ Each reader has a weight for every theme (`love`, `stoic`, …) and for every au
 | First view: 1.5–5s | +0.25 |
 | First view: over 5s | +1 (lingered) |
 
-**Your themes** (`kotes.fav_themes()`) are the ones you picked, plus any theme you've liked or kept 2+ quotes from. Only explicit choices count, so lingering can't quietly add themes. Readers who signed up before picks were recorded use their 3 strongest themes until they retune. The You page shows exactly this set.
+**Your themes** (`kotes.fav_themes()`) are the ones you picked, plus any theme you've liked or kept 2+ quotes from. Only explicit choices count, so lingering can't quietly add themes. Readers who signed up before picks were recorded use their 3 strongest themes until they retune. The You page shows every theme with a positive weight as its true share of the total (`src/lib/taste.ts`), marked Picked, Learned (one of your themes, from likes and keeps) or Exploring (not one of your themes yet), and names any of your themes that are pulling nothing.
 
 `kotes.get_feed()` fills about 85% of each batch (7 of 8) from your themes and keeps the rest for exploring. Within each group, unseen quotes come first, then a **weighted random race**: each quote's chance grows exponentially with how well it matches your taste. When a group runs short, the other fills in, and once everything has been seen, it recycles.
 
@@ -168,7 +168,7 @@ Each reader has a weight for every theme (`love`, `stoic`, …) and for every au
 
 Share opens a preview of a 1080×1920 story image in the card's colour (switchable). The **server** draws it (`/api/share/[id]?tone=`, using Next's `ImageResponse` and TrueType copies of the fonts in `src/fonts/og`), so every browser gets the same image. Drawing it in the browser failed on some phones, Edge on Android among them. It needs a session, is limited to 30 per reader per 10 minutes, and takes about 0.3 s, plus a few seconds for the first share after a restart. On phones, **Share to stories & chats** passes the image file to the system share sheet, which lists Instagram, Facebook, WhatsApp and so on. Elsewhere it's saved as a PNG. The header and footer stay out of the top and bottom 250 px, which Instagram and WhatsApp cover with their own controls.
 
-Links to the site preview with [`public/og.png`](public/og.png), a 1200×630 card in the hero's style. To change it, edit [`scripts/og/og.html`](scripts/og/og.html) and run `npm run og` (needs `npm i -D playwright` and `npx playwright install chromium`). `SITE_URL` (default `https://kotes.mayurmundankar.com`) sets the absolute URL used in previews, and is read at build time.
+Links to the site preview with [`public/og.png`](public/og.png), a 1200×630 card in the hero's style. To change it, edit [`scripts/og/og.html`](scripts/og/og.html) and run `npm run og` (needs `npm i -D playwright` and `npx playwright install chromium`). `SITE_URL` (default `https://kotes.pavlin.tech`) sets the absolute URL used in previews, and is read at build time.
 
 ## Fonts
 

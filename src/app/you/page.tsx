@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { backend, type Taste } from "@/lib/backend";
-import { themeLabel } from "@/lib/themes";
 import { useGuard, useSession } from "@/components/session";
 import { Nav } from "@/components/nav";
 import { Arrow } from "@/components/icons";
+import { TasteBreakdown } from "@/components/taste-breakdown";
 import s from "./you.module.css";
 
 export default function You() {
@@ -23,9 +23,6 @@ export default function You() {
   }, [ready]);
 
   if (!ready) return <div className="center"><span className="spinner" /></div>;
-
-  const themes = (taste ?? []).filter((t) => t.fav);
-  const max = Math.max(1, ...themes.map((t) => t.weight));
 
   async function signOut() {
     await backend.signOut();
@@ -70,17 +67,8 @@ export default function You() {
             Retune <Arrow />
           </Link>
         </div>
-        <p className={s.note}>The themes you picked, plus any you keep liking. The bars show how strongly each one pulls.</p>
-        <ul className={s.bars}>
-          {themes.map((t) => (
-            <li key={t.feature}>
-              <span className={s.label}>{themeLabel(t.feature)}</span>
-              <span className={s.track}>
-                <span className={s.fill} style={{ width: `${Math.max(8, (t.weight / max) * 100)}%` }} />
-              </span>
-            </li>
-          ))}
-        </ul>
+        <p className={s.note}>Everything you&apos;ve picked, liked, kept and lingered on, as a share of 100%.</p>
+        {taste && <TasteBreakdown taste={taste} />}
       </section>
 
       <section className={`${s.block} rise d3`}>

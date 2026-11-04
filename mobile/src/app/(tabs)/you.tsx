@@ -6,15 +6,14 @@ import { router, useFocusEffect } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 
 import { Arrow } from '@/components/icons';
 import { Page } from '@/components/page';
+import { TasteBreakdown } from '@/components/taste';
 import { useToast } from '@/components/toast';
 import { Eyebrow, Rise, Spinner, TextLink } from '@/components/ui';
 import { backend, type Taste } from '@/lib/backend';
 import { useSession } from '@/lib/session';
-import { themeLabel } from '@shared/themes';
 import { C, F, SITE, T, em } from '@/theme';
 
 const ARMED_MS = 4000;
@@ -41,9 +40,6 @@ export default function You() {
     }, []),
   );
   useEffect(() => () => clearTimeout(disarm.current), []);
-
-  const themes = (taste ?? []).filter((t) => t.fav);
-  const max = Math.max(1, ...themes.map((t) => t.weight));
 
   // The guards take the reader back to the welcome screen.
   const signOut = () => backend.signOut();
@@ -89,16 +85,8 @@ export default function You() {
             arrow={<Arrow color={C.rose} />}
           />
         </View>
-        <Text style={s.note}>The themes you picked, plus any you keep liking. The bars show how strongly each one pulls.</Text>
-        {taste === null ? (
-          <Spinner />
-        ) : (
-          <View style={s.bars}>
-            {themes.map((t, i) => (
-              <Bar key={t.feature} label={themeLabel(t.feature)} share={Math.max(8, (t.weight / max) * 100)} delay={i * 40} />
-            ))}
-          </View>
-        )}
+        <Text style={s.note}>Everything you&apos;ve picked, liked, kept and lingered on, as a share of 100%.</Text>
+        {taste === null ? <Spinner /> : <TasteBreakdown taste={taste} />}
       </Rise>
 
       <Rise delay={3} style={s.block}>
@@ -128,23 +116,6 @@ export default function You() {
   );
 }
 
-/** One theme's pull, growing in from the left. */
-function Bar({ label, share, delay }: { label: string; share: number; delay: number }) {
-  const grow = useSharedValue(0);
-  useEffect(() => {
-    grow.set(withDelay(300 + delay, withTiming(1, { duration: 1100, easing: Easing.bezier(0.2, 0.8, 0.2, 1) })));
-  }, [grow, delay]);
-  const fill = useAnimatedStyle(() => ({ transform: [{ scaleX: grow.value }] }));
-  return (
-    <View style={s.bar} accessible accessibilityLabel={`${label}, ${Math.round(share)}%`}>
-      <Text style={s.label}>{label}</Text>
-      <View style={s.track}>
-        <Animated.View style={[s.fill, { width: `${share}%` }, fill]} />
-      </View>
-    </View>
-  );
-}
-
 const s = StyleSheet.create({
   hello: { paddingTop: 44, paddingBottom: 36 },
   email: { fontFamily: F.displayItalic, fontSize: 30, letterSpacing: em(30, -0.02), color: C.wine, marginTop: 10 },
@@ -152,11 +123,6 @@ const s = StyleSheet.create({
   blockHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   h2: { fontFamily: F.display, fontSize: 26, letterSpacing: em(26, -0.02), color: C.wine },
   note: { fontFamily: F.readItalic, fontSize: 17, lineHeight: 23, color: C.ink60, marginTop: 6, marginBottom: 22 },
-  bars: { gap: 14 },
-  bar: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  label: { width: 104, fontFamily: F.displayItalic, fontSize: 18, color: C.wine },
-  track: { flex: 1, height: 3, borderRadius: 2, backgroundColor: C.ink06, overflow: 'hidden' },
-  fill: { height: '100%', borderRadius: 2, backgroundColor: C.rose, transformOrigin: 'left' },
   outBtn: { alignSelf: 'flex-start', paddingTop: 4, paddingBottom: 14 },
   out: { fontFamily: F.uiSemi, fontSize: 15, color: C.roseDeep },
   deleteBtn: { alignSelf: 'flex-start', paddingBottom: 18 },

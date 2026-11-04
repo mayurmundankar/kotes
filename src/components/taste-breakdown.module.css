@@ -1,0 +1,86 @@
+.empty {
+  font-family: var(--read);
+  font-style: italic;
+  font-size: 18px;
+  color: var(--ink-60);
+}
+
+.headline {
+  font-family: var(--display);
+  font-size: 32px;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+  margin-bottom: 16px;
+}
+
+.headline em {
+  font-style: italic;
+  color: var(--rose);
+}
+
+.split {
+  display: flex;
+  gap: 2px;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  transform-origin: left;
+  animation: grow 1.1s var(--ease) both 0.25s;
+}
+
+.split span {
+  flex-basis: 2px;
+  min-width: 2px;
+}
+
+.rows {
+  list-style: none;
+  margin-top: 14px;
+}
+
+.rows li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ink-12);
+}
+
+.dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.label {
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 19px;
+}
+
+.kind {
+  flex: 1;
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  color: var(--ink-40);
+}
+
+.percent {
+  font-weight: 600;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.foot {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-60);
+  margin-top: 14px;
+}
+
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
