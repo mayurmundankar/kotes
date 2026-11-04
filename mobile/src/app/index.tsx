@@ -1,197 +1,340 @@
-// Welcome: the web's landing page, for readers who aren't signed in.
-import { router } from 'expo-router';
+// Welcome: the first screen for readers who aren't signed in. One screen with
+// no scrolling: swipe a deck of quotes, and each card explains a bit of kotes.
+import * as Haptics from 'expo-haptics';
+import { router, useIsFocused } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { GestureDetector, usePanGesture } from 'react-native-gesture-handler';
 import Animated, {
-  Easing,
+  Extrapolation,
+  interpolate,
+  interpolateColor,
+  useAnimatedReaction,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withRepeat,
+  withDelay,
+  withSequence,
+  withSpring,
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { scheduleOnRN } from 'react-native-worklets';
 
-import { Arrow } from '@/components/icons';
-import { Button, Eyebrow, Rise, TextLink, Wordmark } from '@/components/ui';
+import { Button, Wordmark } from '@/components/ui';
 import { C, F, GUTTER, SITE, T, em } from '@/theme';
 
-const FAN = [
-  { text: 'I dwell in Possibility.', theme: 'Hope', tone: 'wine', r: -11, x: -0.64 },
-  { text: 'Forever is composed of nows.', theme: 'Time', tone: 'blush', r: 7, x: -0.36 },
-  { text: 'We are all in the gutter, but some of us are looking at the stars.', theme: 'Wit', tone: 'rose', r: -2, x: -0.5 },
+const DECK = [
+  {
+    text: 'I dwell in Possibility.',
+    author: 'Emily Dickinson',
+    theme: 'Hope',
+    card: C.rose,
+    ink: C.paper,
+    mark: C.paper,
+    stage: C.wine,
+    title: ['The feed that ', 'reads you', ' back.'],
+    body: 'Endless quotes from the minds worth keeping, quietly tuned to what moves you.',
+  },
+  {
+    text: 'Forever is composed of nows.',
+    author: 'Emily Dickinson',
+    theme: 'Time',
+    card: C.blush,
+    ink: C.wine,
+    mark: C.rose,
+    stage: C.rose,
+    title: ['Linger, and ', 'it learns', '.'],
+    body: 'What you like, keep and linger on teaches kotes your taste. Nothing else does.',
+  },
+  {
+    text: 'We are all in the gutter, but some of us are looking at the stars.',
+    author: 'Oscar Wilde',
+    theme: 'Wit',
+    card: C.wine,
+    ink: C.roseSoft,
+    mark: C.rose,
+    stage: C.roseSoft,
+    title: ['Keep what ', 'stays', '.'],
+    body: 'Save the ones that stay with you. A private shelf of words, always within reach.',
+  },
 ] as const;
 
-const STEPS = [
-  { n: '01', title: 'Read.', body: 'An endless river of lines from poets, stoics, wits and the quietly heartbroken.' },
-  { n: '02', title: 'Linger.', body: 'What you like, keep and linger on teaches kotes your taste. Nothing else does.' },
-  { n: '03', title: 'Keep.', body: 'Save the ones that stay with you. A private shelf of words, always within reach.' },
-];
-
-const CARD_W = 252;
-const FAN_H = 400;
-const FLOAT_MS = 7000;
+const LAST = DECK.length - 1;
+const STEPS = DECK.map((_, i) => i);
+const STAGES = DECK.map((d) => d.stage);
+// Dark stages need the status bar and wordmark in a light ink.
+const DARK_STAGE = [true, true, false];
+const SPRING = { damping: 19, stiffness: 170, mass: 0.8 };
 
 const openPrivacy = () => WebBrowser.openBrowserAsync(`${SITE}/privacy`);
 
 export default function Welcome() {
-  const { width, height } = useWindowDimensions();
+  const { width, height, fontScale } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const scroll = useRef<ScrollViewInstance>(null);
-  const stepsY = useRef(0);
-  const display = Math.min(58, Math.max(44, width * 0.134));
-
-  // One clock for the fan; each card floats on its own phase of it.
-  // Held still when the reader has turned animations off.
+  const focused = useIsFocused();
   const reduceMotion = useReducedMotion();
-  const clock = useSharedValue(0);
-  useEffect(() => {
-    if (!reduceMotion) clock.set(withRepeat(withTiming(1, { duration: FLOAT_MS, easing: Easing.linear }), -1));
-  }, [clock, reduceMotion]);
+  const [step, setStep] = useState(0);
 
-  const begin = () => router.push('/login');
+  // The sheet's copy is fixed-height so the deck doesn't jump between cards.
+  const textScale = Math.min(fontScale, 1.15);
+  const copyHeight = Math.round(158 * textScale);
+  const sheetHeight = 24 + copyHeight + 20 + 10 + 20 + 56 + 14 + Math.round(18 * textScale) + 16 + insets.bottom;
+
+  // What's left above the sheet (which overlaps it by its rounded corners).
+  const headerHeight = insets.top + 56;
+  const room = height - sheetHeight - headerHeight + 8;
+  const cardWidth = Math.min(width * 0.76, (room - 34) * 0.86);
+  const cardHeight = Math.max(180, Math.min(room - 34, cardWidth * 1.22));
+  const titleSize = Math.min(36, Math.max(28, width * 0.088));
+
+  // 0, 1, 2 at rest and everything between while dragging: every animation on
+  // this screen follows it, so the whole screen moves under the finger.
+  const progress = useSharedValue(0);
+  const start = useSharedValue(0);
+
+  // One small nudge shows the card can be moved, unless motion is turned off.
+  useEffect(() => {
+    if (reduceMotion) return;
+    progress.set(withDelay(1500, withSequence(withTiming(0.14, { duration: 320 }), withSpring(0, SPRING))));
+  }, [progress, reduceMotion]);
+
+  const onStep = (next: number) => {
+    setStep(next);
+    Haptics.selectionAsync().catch(() => {});
+  };
+  useAnimatedReaction(
+    () => Math.round(progress.value),
+    (now, before) => {
+      if (before !== null && now !== before) scheduleOnRN(onStep, now);
+    },
+  );
+
+  const swipe = usePanGesture({
+    activeOffsetX: [-12, 12],
+    failOffsetY: [-24, 24],
+    onBegin: () => {
+      'worklet';
+      start.set(progress.get());
+    },
+    onUpdate: (e) => {
+      'worklet';
+      const next = start.get() - e.translationX / (width * 0.7);
+      // A little give at both ends of the deck.
+      progress.set(Math.max(-0.14, Math.min(LAST + 0.14, next)));
+    },
+    onDeactivate: (e) => {
+      'worklet';
+      const from = Math.round(start.get());
+      // From the gesture's own totals: a quick flick can end before any update ran.
+      const dragged = -e.translationX / (width * 0.7);
+      // A flick carries the card further, but never against the drag's direction.
+      const flick = -(e.velocityX / width) * 0.18;
+      const flung = Math.round(start.get() + dragged + (flick * dragged > 0 ? flick : 0));
+      const to = Math.max(0, Math.min(LAST, Math.max(from - 1, Math.min(from + 1, flung))));
+      progress.set(withSpring(to, SPRING));
+    },
+  });
+
+  const stageColor = useAnimatedStyle(() => ({
+    backgroundColor: interpolateColor(progress.value, STEPS, STAGES),
+  }));
+
+  const begin = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.push('/login');
+  };
 
   return (
-    <ScrollView
-      ref={scroll}
-      style={{ backgroundColor: C.paper }}
-      contentContainerStyle={[s.page, { paddingTop: insets.top + 18, paddingBottom: insets.bottom + 40 }]}
-      showsVerticalScrollIndicator={false}>
-      <Rise style={s.topbar}>
-        <Wordmark />
-        <Pressable onPress={begin} hitSlop={8} style={s.signin} accessibilityRole="button">
-          <Text style={s.signinText}>Sign in</Text>
-        </Pressable>
-      </Rise>
+    <Animated.View style={[s.screen, stageColor]}>
+      {focused && <StatusBar style={DARK_STAGE[step] ? 'light' : 'dark'} />}
 
-      <View style={[s.hero, { paddingTop: height * 0.13 }]}>
-        <Rise delay={1}>
-          <Eyebrow>A reading app · for humans</Eyebrow>
-        </Rise>
-        <Rise delay={2}>
-          <Text style={[T.title(display), { lineHeight: display }]} maxFontSizeMultiplier={1.3} accessibilityRole="header">
-            The feed that <Text style={T.em}>reads you</Text> back.
-          </Text>
-        </Rise>
-        <Rise delay={3}>
-          <Text style={T.lede}>Endless quotes from the minds worth keeping, quietly tuned, line by line, to what moves you.</Text>
-        </Rise>
-        <Rise delay={4} style={s.ctas}>
-          <Button label="Begin reading" onPress={begin} />
-          <TextLink
-            label="How it works"
-            onPress={() => scroll.current?.scrollTo({ y: stepsY.current - 24 })}
-            arrow={<Arrow color={C.wine} />}
-          />
-        </Rise>
-        <Rise delay={4}>
-          <Text style={T.fine}>Free. Passwordless. No posts, no noise. Only reading.</Text>
-        </Rise>
-      </View>
-
-      <View style={[s.fan, { marginHorizontal: -GUTTER }]} importantForAccessibility="no-hide-descendants">
-        {FAN.map((q, i) => (
-          <FanCard key={i} i={i} q={q} clock={clock} center={width / 2} />
-        ))}
-      </View>
-
-      <View style={s.steps} onLayout={(e) => (stepsY.current = e.nativeEvent.layout.y)}>
-        {STEPS.map((st) => (
-          <View key={st.n} style={s.step}>
-            <Text style={s.num}>{st.n}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={s.stepTitle}>{st.title}</Text>
-              <Text style={s.stepBody}>{st.body}</Text>
-            </View>
+      <GestureDetector gesture={swipe}>
+        <View style={s.stage} accessible={false}>
+          <View style={[s.header, { paddingTop: insets.top, height: headerHeight }]}>
+            <Wordmark size={24} color={DARK_STAGE[step] ? C.paper : C.wine} dot={step === 1 ? C.wine : C.rose} />
           </View>
-        ))}
-      </View>
+          <View style={s.deck} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+            {DECK.map((d, i) => (
+              <DeckCard key={d.text} i={i} d={d} progress={progress} width={cardWidth} height={cardHeight} screen={width} />
+            ))}
+          </View>
+        </View>
+      </GestureDetector>
 
-      <View style={s.close}>
-        <Text style={[T.title(44), s.closeTitle]} maxFontSizeMultiplier={1.3}>
-          Some words{'\n'}
-          <Text style={T.em}>find you.</Text>
-        </Text>
-        <Button label="Continue with email" block onPress={begin} />
-        <Text style={T.fine}>No password, ever. We send a one-time code.</Text>
-      </View>
+      <View style={[s.sheet, { paddingBottom: insets.bottom + 16 }]}>
+        <View style={{ height: copyHeight }}>
+          {DECK.map((d, i) => (
+            <Copy key={d.text} i={i} d={d} progress={progress} current={step === i} titleSize={titleSize} />
+          ))}
+        </View>
 
-      <View style={s.foot}>
-        <Wordmark size={20} />
-        <Text style={T.fine}>
+        <View style={s.dots}>
+          {DECK.map((d, i) => (
+            <Dot key={d.text} i={i} progress={progress} onPress={() => progress.set(withSpring(i, SPRING))} />
+          ))}
+        </View>
+
+        <Button label="Get started" block onPress={begin} />
+
+        <Text style={s.fine} maxFontSizeMultiplier={1.15}>
+          No passwords, just an emailed code.{' '}
           <Text style={s.underline} onPress={openPrivacy} accessibilityRole="link">
             Privacy
-          </Text>{' '}
-          · © 2026
+          </Text>
         </Text>
       </View>
-    </ScrollView>
-  );
-}
-
-function FanCard({ i, q, clock, center }: { i: number; q: (typeof FAN)[number]; clock: SharedValue<number>; center: number }) {
-  const phase = (i * 2200) / FLOAT_MS;
-  const float = useAnimatedStyle(() => {
-    // 0 → 1 → 0 over one loop, like the web's ease-in-out keyframes.
-    const k = (1 - Math.cos(2 * Math.PI * ((clock.value + phase) % 1))) / 2;
-    return { transform: [{ translateY: -12 * k }, { rotate: `${q.r * (1 - 0.2 * k)}deg` }] };
-  });
-  const tone = TONE[q.tone];
-  return (
-    <Animated.View style={[s.card, tone.card, { left: center + q.x * CARD_W }, float]}>
-      <Text style={[s.mark, { color: tone.mark }]}>“</Text>
-      <Text style={[s.cardText, { color: tone.ink }]}>{q.text}</Text>
-      <Text style={[s.cardTheme, { color: tone.ink }]}>{q.theme}</Text>
     </Animated.View>
   );
 }
 
-const TONE = {
-  rose: { card: { backgroundColor: C.rose, boxShadow: '0 30px 60px -24px rgba(194,31,72,0.55)' }, ink: C.paper, mark: C.paper },
-  wine: { card: { backgroundColor: C.wine }, ink: C.roseSoft, mark: C.rose },
-  blush: { card: { backgroundColor: C.blush, boxShadow: `inset 0 0 0 1px ${C.ink06}` }, ink: C.wine, mark: C.rose },
-} as const;
+type Item = (typeof DECK)[number];
+
+/** A card in the pile: swiped away to the left, or waiting behind the top one. */
+function DeckCard({
+  i,
+  d,
+  progress,
+  width,
+  height,
+  screen,
+}: {
+  i: number;
+  d: Item;
+  progress: SharedValue<number>;
+  width: number;
+  height: number;
+  screen: number;
+}) {
+  const motion = useAnimatedStyle(() => {
+    const offset = i - progress.value;
+    if (offset < 0) {
+      return { transform: [{ translateX: offset * screen * 1.15 }, { rotate: `${offset * 14}deg` }], opacity: 1 };
+    }
+    return {
+      transform: [{ translateX: offset * 16 }, { translateY: offset * 6 }, { rotate: `${offset * 5}deg` }, { scale: 1 - offset * 0.07 }],
+      opacity: interpolate(offset, [1.5, 2.2], [1, 0], Extrapolation.CLAMP),
+    };
+  });
+  // Short quotes run large, so every card feels full.
+  const size = width * (d.text.length < 30 ? 0.15 : d.text.length < 60 ? 0.135 : 0.108);
+
+  return (
+    <Animated.View style={[s.card, { width, height, backgroundColor: d.card, zIndex: DECK.length - i }, motion]}>
+      <Text style={[s.mark, { color: d.mark }]}>“</Text>
+      <View style={s.cardBody}>
+        <Text
+          style={[s.cardText, { color: d.ink, fontSize: size, lineHeight: size * 1.14, letterSpacing: em(size, -0.012) }]}
+          adjustsFontSizeToFit
+          minimumFontScale={0.7}
+          numberOfLines={7}
+          maxFontSizeMultiplier={1}>
+          {d.text}
+        </Text>
+      </View>
+      <View style={s.cardFoot}>
+        <Text style={[s.author, { color: d.ink }]} numberOfLines={1} maxFontSizeMultiplier={1}>
+          {d.author}
+        </Text>
+        <Text style={[s.theme, { color: d.ink }]} maxFontSizeMultiplier={1}>
+          {d.theme}
+        </Text>
+      </View>
+    </Animated.View>
+  );
+}
+
+/** One step's words. All three share the space and cross-fade with the drag. */
+function Copy({
+  i,
+  d,
+  progress,
+  current,
+  titleSize,
+}: {
+  i: number;
+  d: Item;
+  progress: SharedValue<number>;
+  current: boolean;
+  titleSize: number;
+}) {
+  const motion = useAnimatedStyle(() => {
+    const away = i - progress.value;
+    return {
+      opacity: interpolate(Math.abs(away), [0, 0.5], [1, 0], Extrapolation.CLAMP),
+      transform: [{ translateX: away * 28 }],
+    };
+  });
+  return (
+    <Animated.View
+      style={[StyleSheet.absoluteFill, motion]}
+      pointerEvents="none"
+      accessibilityElementsHidden={!current}
+      importantForAccessibility={current ? 'yes' : 'no-hide-descendants'}>
+      <Text
+        style={[T.title(titleSize), { lineHeight: titleSize * 1.06 }]}
+        maxFontSizeMultiplier={1.15}
+        accessibilityRole="header">
+        {d.title[0]}
+        <Text style={T.em}>{d.title[1]}</Text>
+        {d.title[2]}
+      </Text>
+      <Text style={s.body} maxFontSizeMultiplier={1.15}>
+        {d.body}
+      </Text>
+    </Animated.View>
+  );
+}
+
+function Dot({ i, progress, onPress }: { i: number; progress: SharedValue<number>; onPress: () => void }) {
+  const motion = useAnimatedStyle(() => {
+    const near = interpolate(Math.abs(i - progress.value), [0, 1], [1, 0], Extrapolation.CLAMP);
+    return {
+      width: 8 + near * 16,
+      backgroundColor: interpolateColor(near, [0, 1], [C.ink12, C.rose]),
+    };
+  });
+  return (
+    <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={`Card ${i + 1} of ${DECK.length}`}>
+      <Animated.View style={[s.dot, motion]} />
+    </Pressable>
+  );
+}
 
 const s = StyleSheet.create({
-  page: { paddingHorizontal: GUTTER, backgroundColor: C.paper },
-  topbar: { height: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  signin: { paddingVertical: 10, paddingHorizontal: 16, marginRight: -16 },
-  signinText: { fontFamily: F.uiSemi, fontSize: 14, color: C.wine },
-  hero: { gap: 22 },
-  ctas: { flexDirection: 'row', alignItems: 'center', gap: 26, marginTop: 8 },
-  fan: { height: FAN_H, marginTop: 72, marginBottom: 24 },
+  screen: { flex: 1 },
+  stage: { flex: 1 },
+  header: { alignItems: 'center', justifyContent: 'center' },
+  deck: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingBottom: 26 },
   card: {
     position: 'absolute',
-    top: (FAN_H - 300) / 2,
-    width: CARD_W,
-    minHeight: 300,
-    paddingTop: 30,
-    paddingHorizontal: 26,
-    paddingBottom: 26,
-    borderRadius: 26,
-    justifyContent: 'space-between',
-    gap: 18,
-    transformOrigin: '50% 90%',
+    paddingTop: 22,
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+    borderRadius: 28,
+    boxShadow: '0 24px 50px -22px rgba(42,7,17,0.55)',
   },
-  mark: { fontFamily: F.display, fontSize: 64, lineHeight: 64 * 0.9, height: 28, overflow: 'visible' },
-  cardText: { fontFamily: F.readMedium, fontSize: 26, lineHeight: 26 * 1.18, flex: 1 },
-  cardTheme: { fontFamily: F.uiSemi, fontSize: 10.5, letterSpacing: em(10.5, 0.2), textTransform: 'uppercase', opacity: 0.7 },
-  steps: { borderTopWidth: 1, borderTopColor: C.ink12 },
-  step: { flexDirection: 'row', gap: 8, paddingVertical: 26, borderBottomWidth: 1, borderBottomColor: C.ink12 },
-  num: { width: 48, fontFamily: F.displayItalic, fontSize: 15, color: C.rose, paddingTop: 8 },
-  stepTitle: { fontFamily: F.display, fontSize: 30, letterSpacing: em(30, -0.02), color: C.wine, marginBottom: 6 },
-  stepBody: { fontFamily: F.read, fontSize: 19, lineHeight: 19 * 1.4, color: C.ink60 },
-  close: { alignItems: 'center', gap: 18, paddingTop: 88, paddingBottom: 72 },
-  closeTitle: { textAlign: 'center', lineHeight: 44, letterSpacing: em(44, -0.03), marginBottom: 14 },
-  foot: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
+  mark: { fontFamily: F.display, fontSize: 56, lineHeight: 50, height: 30 },
+  cardBody: { flex: 1, justifyContent: 'center' },
+  cardText: { fontFamily: F.readMedium },
+  cardFoot: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, marginTop: 10 },
+  author: { flex: 1, fontFamily: F.readItalic, fontSize: 15, opacity: 0.85 },
+  theme: { fontFamily: F.uiSemi, fontSize: 10.5, letterSpacing: em(10.5, 0.2), textTransform: 'uppercase', opacity: 0.7 },
+  sheet: {
+    marginTop: -24,
     paddingTop: 24,
-    borderTopWidth: 1,
-    borderTopColor: C.ink12,
+    paddingHorizontal: GUTTER,
+    backgroundColor: C.paper,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    zIndex: 10,
   },
+  body: { fontFamily: F.read, fontSize: 18.5, lineHeight: 18.5 * 1.32, color: C.ink60, marginTop: 10 },
+  dots: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 20, marginBottom: 20 },
+  dot: { height: 8, borderRadius: 4 },
+  fine: { ...T.fine, textAlign: 'center', marginTop: 14 },
   underline: { textDecorationLine: 'underline' },
 });
