@@ -125,6 +125,11 @@ export default function Privacy() {
           keystore, and it remembers that you&apos;re signed in so it opens faster. Uninstalling the app removes
           both.
         </p>
+        <p>
+          The app&apos;s morning quote is off unless you turn it on. It is scheduled on your phone, so kotes&apos; servers
+          don&apos;t know who gets one or when, and no notification ID is created or stored. Turn it off any time under
+          You. Signing out stops it and forgets your choice.
+        </p>
       </section>
 
       <section className={s.block}>
