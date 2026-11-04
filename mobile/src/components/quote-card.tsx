@@ -16,7 +16,7 @@ import Animated, {
 import { Bookmark, Heart, Share } from './icons';
 import type { Kind, Quote } from '@/lib/backend';
 import { themeLabel } from '@shared/themes';
-import { C, F, GUTTER, NAV_H, em } from '@/theme';
+import { C, F, GUTTER, NAV_H, em, hang } from '@/theme';
 
 export const TONES = ['paper', 'wine', 'blush', 'rose'] as const;
 export type Tone = (typeof TONES)[number];
@@ -106,7 +106,7 @@ export const QuoteCard = memo(function QuoteCard({ quote, tone, height, bottomIn
           “
         </Text>
         <Text
-          style={[s.text, { color: t.ink, fontSize: fit.size, lineHeight: fit.size * 1.12, letterSpacing: em(fit.size, -0.012) }]}
+          style={[s.text, hang(fit.size), { color: t.ink, fontSize: fit.size, lineHeight: fit.size * 1.12, letterSpacing: em(fit.size, -0.012) }]}
           accessibilityRole="text">
           {quote.text}
         </Text>

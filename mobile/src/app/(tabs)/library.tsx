@@ -11,7 +11,7 @@ import { useToast } from '@/components/toast';
 import { Button, Rise, Spinner } from '@/components/ui';
 import { backend, type Kind, type Quote } from '@/lib/backend';
 import { themeLabel } from '@shared/themes';
-import { C, F, T, em } from '@/theme';
+import { C, F, T, em, hang } from '@/theme';
 
 type Lists = Record<Kind, Quote[] | null>;
 
@@ -165,7 +165,7 @@ function Act({
 }
 
 const s = StyleSheet.create({
-  title: { marginTop: 40, marginBottom: 28 },
+  title: { marginTop: 40, marginBottom: 23 }, // plus the room T.title leaves under its letters
   tabs: { flexDirection: 'row', gap: 26, borderBottomWidth: 1, borderBottomColor: C.ink12 },
   tab: { paddingTop: 12, paddingBottom: 14 },
   tabText: { fontFamily: F.displayItalic, fontSize: 21, color: C.ink40 },
@@ -175,7 +175,7 @@ const s = StyleSheet.create({
   empty: { alignItems: 'flex-start', gap: 24, paddingVertical: 48 },
   emptyText: { fontFamily: F.readItalic, fontSize: 23, lineHeight: 23 * 1.35, color: C.ink60 },
   item: { paddingTop: 28, paddingBottom: 22, borderBottomWidth: 1, borderBottomColor: C.ink12 },
-  quote: { fontFamily: F.readMedium, fontSize: 25, lineHeight: 30, color: C.wine },
+  quote: { fontFamily: F.readMedium, fontSize: 25, lineHeight: 30, color: C.wine, ...hang(25) },
   quoteMark: { fontFamily: F.display, color: C.rose },
   author: { fontFamily: F.readItalic, fontSize: 16, color: C.ink60, marginTop: 8 },
   row: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, marginTop: 16 },

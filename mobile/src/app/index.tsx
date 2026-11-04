@@ -25,7 +25,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { Button, Wordmark } from '@/components/ui';
-import { C, F, GUTTER, SITE, T, em } from '@/theme';
+import { C, F, GUTTER, SITE, T, em, hang } from '@/theme';
 
 const DECK = [
   {
@@ -227,7 +227,7 @@ function DeckCard({
       <Text style={[s.mark, { color: d.mark }]}>“</Text>
       <View style={s.cardBody}>
         <Text
-          style={[s.cardText, { color: d.ink, fontSize: size, lineHeight: size * 1.14, letterSpacing: em(size, -0.012) }]}
+          style={[s.cardText, hang(size), { color: d.ink, fontSize: size, lineHeight: size * 1.14, letterSpacing: em(size, -0.012) }]}
           adjustsFontSizeToFit
           minimumFontScale={0.7}
           numberOfLines={7}

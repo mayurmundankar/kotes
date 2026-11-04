@@ -66,7 +66,7 @@ export function TasteBreakdown({ taste }: { taste: Taste[] }) {
 
 const s = StyleSheet.create({
   empty: { fontFamily: F.readItalic, fontSize: 18, lineHeight: 24, color: C.ink60 },
-  headline: { fontFamily: F.display, fontSize: 32, lineHeight: 36, letterSpacing: em(32, -0.025), color: C.wine, marginBottom: 16 },
+  headline: { fontFamily: F.display, fontSize: 32, lineHeight: 36, letterSpacing: em(32, -0.025), color: C.wine, paddingBottom: 4, marginBottom: 12 },
   em: { fontFamily: F.displayItalic, color: C.rose },
   split: { flexDirection: 'row', gap: 2, height: 12, borderRadius: 6, overflow: 'hidden', transformOrigin: 'left' },
   part: { flexBasis: 2, minWidth: 2 },

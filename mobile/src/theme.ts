@@ -1,6 +1,6 @@
 // kotes · one hue, many depths. Mirrors src/app/globals.css on the web:
 // everything is a shade of the same red-pink (hue ≈ 348°).
-import { Platform, type TextStyle } from 'react-native';
+import { PixelRatio, Platform, type TextStyle } from 'react-native';
 
 export const C = {
   rose: '#e8365f', // primary
@@ -57,6 +57,15 @@ export const em = (size: number, value: number) => size * value;
 // Android pads text for accents by default, which pushes tight serif lines apart.
 const tight: TextStyle = Platform.OS === 'android' ? { includeFontPadding: false } : {};
 
+// Android cuts text off at its box, and a line height tighter than the font's
+// own trims that box from below, taking the tails of g and y on the last line.
+// This gives them room without moving anything around the text.
+export const hang = (size: number): TextStyle => {
+  if (Platform.OS !== 'android') return {};
+  const room = Math.ceil(size * 0.1 * PixelRatio.getFontScale());
+  return { paddingBottom: room, marginBottom: -room };
+};
+
 export const T = {
   wordmark: { fontFamily: F.displayItalic, fontSize: 26, letterSpacing: em(26, -0.02), color: C.wine, ...tight },
   eyebrow: {
@@ -77,6 +86,7 @@ export const T = {
     letterSpacing: em(size, -0.035),
     color: C.wine,
     ...tight,
+    ...hang(size),
   }),
   em: { fontFamily: F.displayItalic, color: C.rose },
 } satisfies Record<string, TextStyle | ((n: number) => TextStyle)>;
