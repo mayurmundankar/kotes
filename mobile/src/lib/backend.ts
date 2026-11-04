@@ -12,7 +12,7 @@ export { OTP_LENGTH } from '@shared/types';
 
 // Android builds call the live site (eas.json). The web preview has no env set
 // and uses its own origin, which Metro forwards to the local server.
-const BASE = process.env.EXPO_PUBLIC_API_URL ?? (Platform.OS === 'web' ? '' : 'https://kotes.mayurmundankar.com');
+const BASE = process.env.EXPO_PUBLIC_API_URL ?? (Platform.OS === 'web' ? '' : 'https://kotes.pavlin.tech');
 const TOKEN_KEY = 'kotes.token';
 const VERSION = Constants.expoConfig?.version ?? '0';
 // Shows up in the server's security and error logs next to browser names.

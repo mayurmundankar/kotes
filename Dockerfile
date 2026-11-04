@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # No secrets are needed at build time; they're read when the server starts.
 # SITE_URL is the exception that isn't secret: prerendered pages bake it in.
-ARG SITE_URL=https://kotes.mayurmundankar.com
+ARG SITE_URL=https://kotes.pavlin.tech
 RUN npm run build
 
 FROM node:22-alpine AS run

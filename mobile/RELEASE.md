@@ -34,7 +34,7 @@ Plan for about three weeks from step 1 to readers.
 Google's reviewers can't receive kotes' emails. Choose an address and a code, put both in the server's `.env`, and redeploy:
 
 ```
-REVIEW_EMAIL=review@kotes.mayurmundankar.com
+REVIEW_EMAIL=review@kotes.pavlin.tech
 REVIEW_CODE=<6 random digits>
 ```
 
@@ -78,9 +78,9 @@ Once production access is granted, promote the tested release (or run `submit --
 ## Updates
 
 - Change `version` in `app.json` for every release readers will notice (`1.0.1`, `1.1.0`). The build number (`versionCode`) goes up by itself (`autoIncrement`, stored by EAS).
-- Server changes deploy as before. The app follows `https://kotes.mayurmundankar.com/api`, so keep the API backwards compatible: older app versions stay installed for months.
+- Server changes deploy as before. The app follows `https://kotes.pavlin.tech/api`, so keep the API backwards compatible: older app versions stay installed for months.
 - Crashes in Android's own code and app freezes show up in Play Console under **Android vitals**. JavaScript errors reach the server's log as `"sec":"client_error"`.
 
 ## Optional: App Links
 
-To make `kotes.mayurmundankar.com` links open the app, copy the **SHA-256 certificate fingerprint** from App integrity → App signing. Put it in `public/.well-known/assetlinks.json` on the website and add an `intentFilters` entry to `app.json`. kotes shares images, not links, so this can wait.
+To make `kotes.pavlin.tech` links open the app, copy the **SHA-256 certificate fingerprint** from App integrity → App signing. Put it in `public/.well-known/assetlinks.json` on the website and add an `intentFilters` entry to `app.json`. kotes shares images, not links, so this can wait.

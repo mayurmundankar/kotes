@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const site = process.env.SITE_URL ?? "https://kotes.mayurmundankar.com";
+const site = process.env.SITE_URL ?? "https://kotes.pavlin.tech";
 
 // AI training crawlers, AI search/answer bots and bulk scrapers. robots.txt is
 // a request, not a wall: well-behaved bots obey it, and Cloudflare's "Block AI

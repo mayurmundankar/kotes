@@ -107,7 +107,7 @@ export const GET = handle<{ params: Promise<{ id: string }> }>(async (req, ctx) 
             kotes<span style={{ fontStyle: "normal", color: c.accent }}>.</span>
           </div>
           <span style={{ fontFamily: "ui", fontSize: 26, letterSpacing: 5, color: c.soft }}>
-            {new URL(process.env.SITE_URL ?? "https://kotes.mayurmundankar.com").host.toUpperCase()}
+            {new URL(process.env.SITE_URL ?? "https://kotes.pavlin.tech").host.toUpperCase()}
           </span>
         </div>
       </div>

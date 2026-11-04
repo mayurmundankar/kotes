@@ -49,7 +49,7 @@ const manrope = localFont({
 const title = "kotes · the feed that reads you back";
 const description = "Endless quotes from the minds worth keeping, tuned to what moves you. For readers only.";
 // Link previews (WhatsApp, Instagram, Facebook, X) need absolute URLs.
-const site = process.env.SITE_URL ?? "https://kotes.mayurmundankar.com";
+const site = process.env.SITE_URL ?? "https://kotes.pavlin.tech";
 const preview = { url: "/og.png", width: 1200, height: 630, alt: "kotes. The feed that reads you back." };
 
 export const metadata: Metadata = {

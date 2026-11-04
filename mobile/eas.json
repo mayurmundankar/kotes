@@ -11,7 +11,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://kotes.mayurmundankar.com"
+        "EXPO_PUBLIC_API_URL": "https://kotes.pavlin.tech"
       }
     },
     "preview": {
@@ -20,7 +20,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://kotes.mayurmundankar.com"
+        "EXPO_PUBLIC_API_URL": "https://kotes.pavlin.tech"
       }
     },
     "production": {
@@ -29,7 +29,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://kotes.mayurmundankar.com"
+        "EXPO_PUBLIC_API_URL": "https://kotes.pavlin.tech"
       }
     }
   },

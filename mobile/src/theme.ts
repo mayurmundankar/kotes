@@ -49,7 +49,7 @@ export const FONT_FILES = {
 
 export const GUTTER = 24;
 export const NAV_H = 68;
-export const SITE = 'https://kotes.mayurmundankar.com';
+export const SITE = 'https://kotes.pavlin.tech';
 
 // CSS letter-spacing is in em; React Native's is in points.
 export const em = (size: number, value: number) => size * value;

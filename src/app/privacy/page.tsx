@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 // Where readers can write about their data. Left empty, the page points them
 // to in-app deletion only.
-const CONTACT_EMAIL = "privacy.kotes@mayurmundankar.com";
+const CONTACT_EMAIL = "privacy-kotes@pavlin.tech";
 const UPDATED = "4 November 2026";
 
 export default function Privacy() {
@@ -144,7 +144,7 @@ export default function Privacy() {
         <p>
           In the app or on this website, open <em>You</em> and tap <em>Delete my account</em> (twice, to be sure). It
           permanently erases your email, sessions, taste, likes, kept quotes and reading history, right away, on
-          every device. No app? Sign in at <Link href="/login">kotes.mayurmundankar.com</Link> and do the same.
+          every device. No app? Sign in at <Link href="/login">kotes.pavlin.tech</Link> and do the same.
           Signing out only ends the session on that device.
         </p>
         {CONTACT_EMAIL ? (

@@ -18,7 +18,7 @@ const MAX_FAILURES_PER_DAY = 15;
 const MAX_CODES_GLOBAL_PER_HOUR = Number(process.env.MAX_CODES_PER_HOUR ?? 300); // protects the Resend quota
 const SESSION_DAYS = 90;
 // `__Host-` (HTTPS only): the browser refuses it from any other subdomain of
-// mayurmundankar.com, so a sibling site can't plant or overwrite the session.
+// pavlin.tech, so a sibling site can't plant or overwrite the session.
 const SECURE = process.env.NODE_ENV === "production";
 const COOKIE = SECURE ? "__Host-kotes_session" : "kotes_session";
 const LEGACY_COOKIE = "kotes_session"; // pre-hardening name, migrated on next visit

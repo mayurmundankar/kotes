@@ -38,11 +38,11 @@ Copy these into Play Console. Each section names the page it belongs to.
 
 **Category:** Books & Reference. **Tags:** Quotes, Reading, Books.
 
-**Contact details:** email `privacy.kotes@mayurmundankar.com`, website `https://kotes.mayurmundankar.com`.
+**Contact details:** email `privacy-kotes@pavlin.tech`, website `https://kotes.pavlin.tech`.
 
 ## App content (Policy → App content)
 
-**Privacy policy:** `https://kotes.mayurmundankar.com/privacy`
+**Privacy policy:** `https://kotes.pavlin.tech/privacy`
 
 **App access:** *All or some functionality is restricted.* Add one set of instructions:
 
@@ -65,7 +65,7 @@ Copy these into Play Console. Each section names the page it belongs to.
 | --- | --- |
 | Does the app collect or share user data? | Yes, it collects. |
 | Is all data encrypted in transit? | Yes (HTTPS only). |
-| Can users request deletion? | Yes. In the app (You → Delete my account) and at `https://kotes.mayurmundankar.com/privacy#delete`. |
+| Can users request deletion? | Yes. In the app (You → Delete my account) and at `https://kotes.pavlin.tech/privacy#delete`. |
 | Is data shared with third parties? | No. Supabase, Resend, Cloudflare and Google process it only on kotes' behalf, which Play doesn't count as sharing. |
 
 Data types to tick (all *Collected*, not *Shared*, not *Processed ephemerally*):
@@ -79,7 +79,7 @@ Data types to tick (all *Collected*, not *Shared*, not *Processed ephemerally*):
 
 Leave everything else unticked. kotes doesn't collect location, contacts, photos, files, device IDs or advertising IDs. The IP address is used only in memory, against abuse, which Play's form doesn't ask about.
 
-**Account deletion URL:** `https://kotes.mayurmundankar.com/privacy#delete`
+**Account deletion URL:** `https://kotes.pavlin.tech/privacy#delete`
 
 ## Release notes for 1.0.0
 
